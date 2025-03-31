@@ -1,17 +1,24 @@
 #!/bin/bash
 
-# Check if the qubic-cli GitHub URL is provided
-if [ -z "$1" ]; then
-    echo "Usage: $0 <qubic_cli_github_url>"
-    echo "Example: $0 https://github.com/qubic/qubic-cli/tree/madrid-2025"
+# Check if the script is run as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "This script must be run as root."
     exit 1
 fi
 
-# Extract branch name from the URL
-BRANCH=$(echo "$1" | sed -E 's|.*/tree/(.*)|\1|')
-if [ -z "$BRANCH" ]; then
-    echo "Failed to extract branch name from $1"
-    exit 1
+# Handle the qubic-cli GitHub URL argument
+if [ $# -eq 0 ]; then
+    echo "Warning: No qubic-cli URL provided. You should use a URL like https://github.com/qubic/qubic-cli/tree/madrid-2025."
+    echo "Using default branch 'main'."
+    BRANCH="main"
+else
+    # Extract branch name from the provided URL
+    BRANCH=$(echo "$1" | sed -E 's|.*/tree/(.*)|\1|')
+    if [ -z "$BRANCH" ]; then
+        echo "Failed to extract branch name from $1. Please provide a valid URL like https://github.com/qubic/qubic-cli/tree/madrid-2025."
+        echo "Using default branch 'main'."
+        BRANCH="main"
+    fi
 fi
 
 # Clone the Qubic development kit repository
@@ -20,11 +27,6 @@ git clone --recursive https://github.com/qubic/qubic-dev-kit /root/qubic
 # Change to the qubic directory
 cd /root/qubic
 
-# Checkout the specified branch in qubic-cli
-cd qubic-cli
-git checkout "$BRANCH" || { echo "Failed to checkout branch $BRANCH"; exit 1; }
-cd ..
-
 # Copy necessary scripts to core-docker directory
 cp scripts/deploy.sh scripts/cleanup.sh scripts/efi_build.sh scripts/tree_vhd.sh /root/qubic/core-docker
 cp -r scripts/letsencrypt core-docker/
@@ -32,7 +34,7 @@ cp -r scripts/letsencrypt core-docker/
 # Rename core-docker to qubic_docker
 mv core-docker qubic_docker
 
-# Update package list and install all required packages in one go
+# Update package list and install required packages
 apt update
 apt install -y freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12 dkms build-essential linux-headers-$(uname -r) gcc make perl curl
 
@@ -56,15 +58,16 @@ modprobe -r vboxnetflt vboxnetadp vboxpci vboxdrv
 curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
-# Build qubic-cli
-cd /root/qubic/qubic-cli
+# Build qubic-cli with the specified branch
+cd /root/qubic/qubic-cli || { echo "Failed to change to qubic-cli directory"; exit 1; }
+git checkout "$BRANCH" || { echo "Failed to checkout branch $BRANCH"; exit 1; }
 mkdir -p build
 cd build
 cmake ..
 make
 cp qubic-cli /root/qubic/qubic_docker
 
-# Build qlogging
+# Build qlogging (no branch specification required)
 cd /root/qubic/qlogging
 mkdir -p build
 cd build
