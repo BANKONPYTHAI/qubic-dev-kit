@@ -12,6 +12,8 @@ This repository contains the Qubic Devkit, designed to help developers set up a 
   * Modify qubic-cli and the frontend to suit your SC.
   * Adjust the launch scripts (e.g., deploy.sh) as necessary.
 
+* When done the deployment, before relaunching a new one, please run the script `cleanup.sh`
+
 ---
 
 ## Summary of Commands
@@ -31,6 +33,13 @@ cd /root/qubic/qubic_docker
 
 After preparing the qubic.vhd and put them in `/root/qubic/qubic.vhd`:
 ```bash
+./deploy.sh https://github.com/qubic/core/tree/madrid-2025 /root/qubic/qubic-efi-cross-build/Qubic.efi
+```
+
+When rerun the deployment, remember to run `cleanup.sh` first
+
+```bash
+./cleanup.sh
 ./deploy.sh https://github.com/qubic/core/tree/madrid-2025 /root/qubic/qubic-efi-cross-build/Qubic.efi
 ```
 
@@ -95,10 +104,11 @@ After compiling the EFI file, deploy the Qubic testnet node and the HM25 demo us
   * Launch the Qubic testnet node and the HM25 Smart Contract.
   * Start the RPC services (qubic-node, qubic-http, and qubic go-archive).
   * Launch the HM25 demo frontend example.
- 
 
+ # Step 6: Rerun the deployment
+ Before rerunning the deployment, please remember to run `cleanup.sh` first. 
 
-
-
-
-
+ ```bash
+./cleanup.sh
+./deploy.sh https://github.com/qubic/core/tree/madrid-2025 /root/qubic/qubic-efi-cross-build/Qubic.efi
+```
