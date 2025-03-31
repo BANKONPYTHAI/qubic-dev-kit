@@ -1,0 +1,9 @@
+[submodule "core-docker"]
+	path = core-docker
+	url = https://github.com/qubic/core-docker.git
+[submodule "qubic-cli"]
+	path = qubic-cli
+	url = https://github.com/qubic/qubic-cli.git
+[submodule "qlogging"]
+	path = qlogging
+	url = https://github.com/qubic/qlogging.git
