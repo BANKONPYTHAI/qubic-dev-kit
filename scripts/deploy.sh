@@ -4,19 +4,26 @@
 # and running additional services. It requires two arguments:
 # 1. A GitHub URL to fetch the EPOCH value from the Qubic core repository.
 # 2. The path to a prebuilt Qubic.efi file to use in the deployment.
+# Optionally, a third argument '--no-frontend' can be provided to skip the frontend setup.
 
 # Print a startup message
 echo "Starting deploy script..."
 
-# Check if exactly two arguments are provided: GitHub URL and EFI file path
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 [github] [efi_file_path]"
+# Check the number of arguments
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+    echo "Usage: $0 [github] [efi_file_path] [--no-frontend]"
     exit 1
 fi
 
 # Assign arguments to variables
 GITHUB=$1
 EFI_FILE=$2
+SKIP_FRONTEND=false
+
+# Check if the third argument is '--no-frontend'
+if [ "$#" -eq 3 ] && [ "$3" == "--no-frontend" ]; then
+    SKIP_FRONTEND=true
+fi
 
 # Verify that the provided EFI file exists and is accessible
 if [ ! -f "$EFI_FILE" ]; then
@@ -53,7 +60,7 @@ MOUNT_POINT="/mnt/qubic"
 # Mount the first partition of the VHD to the mount point
 sudo mount ${LOOP_DEVICE}p1 $MOUNT_POINT
 
-# Clean up the VHD by removing all files and directories except the 'efi/' directory
+# Clean up the VHD by removing all files and directories except the 'efi/' directory and 'spectrum.*' files
 find $MOUNT_POINT -mindepth 1 -maxdepth 1 ! -name "efi" ! -name "spectrum.*" -exec sudo rm -rf {} +
 
 # Copy new files from /root/filesForVHD/ into the VHD
@@ -100,9 +107,19 @@ echo "HOST_IP=$HOST_IP" > .env
 # Start the Docker Compose services in detached mode
 docker-compose up -d
 
-# Step 5: Run the frontend setup script
-echo "Setting up the frontend..."
-bash /root/qubic/setup_frontend.sh
+# Step 5: Handle frontend setup based on the flag
+if [ "$SKIP_FRONTEND" = false ]; then
+    echo "WARNING: This script will launch the HM25 frontend demo."
+    echo "Make sure you have a consistent node that contains your designated smart contract (SC) in the EFI."
+    echo "If you want to run your own frontend corresponding to your SC, modify this script accordingly."
+    echo "The HM25 frontend demo works with the SC HM25 in the core repository branch: https://github.com/qubic/core/tree/madrid-2025"
+    echo "Ensure you use the correct branch (e.g., madrid-2025) to compile the EFI for HM25."
+    echo ""
+    echo "Setting up the frontend..."
+    bash /root/qubic/setup_frontend.sh
+else
+    echo "Skipping frontend setup as per the '--no-frontend' flag."
+fi
 
 # Wait for services to initialize
 sleep 5
@@ -115,7 +132,9 @@ echo "==========================================================================
 echo "Deployment completed successfully."
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "RPC is available at: http://$IP/v1/tick-info"
-echo "Demo App: http://$IP:8081"
+if [ "$SKIP_FRONTEND" = false ]; then
+    echo "Demo App: http://$IP:8081"
+fi
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "To connect to the testnet via qubic-cli, use:"
 echo "_______________________"
