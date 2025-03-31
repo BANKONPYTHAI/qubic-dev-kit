@@ -28,8 +28,8 @@ git clone --recursive https://github.com/qubic/qubic-dev-kit /root/qubic
 cd /root/qubic
 
 # Copy necessary scripts to core-docker directory
-cp scripts/deploy.sh scripts/cleanup.sh scripts/efi_build.sh scripts/tree_vhd.sh /root/qubic/core-docker
-cp -r scripts/letsencrypt core-docker/
+cp /root/qubic/scripts/deploy.sh /root/qubic/scripts/docker-compose.yaml /root/qubic/scripts/cleanup.sh /root/qubic/scripts/efi_build.sh /root/qubic/scripts/tree_vhd.sh /root/qubic/core-docker
+cp -r /root/qubic/scripts/letsencrypt core-docker/
 
 # Rename core-docker to qubic_docker
 mv core-docker qubic_docker
