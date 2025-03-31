@@ -21,11 +21,13 @@ This repository contains the Qubic Devkit, designed to help developers set up a 
 sudo ./environment_setup.sh https://github.com/qubic/qubic-cli/tree/madrid-2025
 ```
 2. Navigate and Build EFI:
+After preparing the seeds.txt, peers.txt, and config.yaml:
 ```bash
 cd /root/qubic/qubic_docker
 ./efi_build.sh https://github.com/qubic/core/tree/madrid-2025
 ```
 3. Deploy the Node and Demo:
+After preparing the qubic.vhd and put them in `/root/qubic/qubic.vhd`:
 ```bash
 ./deploy.sh https://github.com/qubic/core/tree/madrid-2025 /root/qubic/qubic-efi-cross-build/Qubic.efi
 ```
@@ -77,7 +79,10 @@ To simplify the EFI build process, use the provided efi_build.sh script.
 
   This script will compile the Qubic.efi file based on the specified branch and your configuration files.
 
-## Step 4: Deploy the Qubic Node and HM25 Demo
+## Step 4: Prepare the Qubic.vhd and epoch files
+Please refer to [this instructions](https://github.com/qubic/core-docker/tree/main?tab=readme-ov-file#prerequisites)
+
+## Step 5: Deploy the Qubic Node and HM25 Demo
 After compiling the EFI file, deploy the Qubic testnet node and the HM25 demo using the deploy.sh script.
 * Run the Deployment Script:
   Provide the GitHub branch URL and the path to the compiled EFI file. For this demo, use the following command:
