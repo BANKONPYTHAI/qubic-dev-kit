@@ -82,7 +82,7 @@ To simplify the EFI build process, use the provided efi_build.sh script.
   This script will compile the Qubic.efi file based on the specified branch and your configuration files.
 
 ## Step 4: Prepare the Qubic.vhd and epoch files
-Please refer to [this instructions](https://github.com/qubic/core-docker/tree/main?tab=readme-ov-file#prerequisites)
+Please refer to [this instructions](https://github.com/qubic/core-docker/tree/main?tab=readme-ov-file#prerequisites) to prepare the qubic.vhd file and put it to `/root/qubic/qubic.vhd`
 
 ## Step 5: Deploy the Qubic Node and HM25 Demo
 After compiling the EFI file, deploy the Qubic testnet node and the HM25 demo using the deploy.sh script.
