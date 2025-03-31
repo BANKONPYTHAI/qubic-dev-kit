@@ -21,12 +21,14 @@ This repository contains the Qubic Devkit, designed to help developers set up a 
 sudo ./environment_setup.sh https://github.com/qubic/qubic-cli/tree/madrid-2025
 ```
 2. Navigate and Build EFI:
+   
 After preparing the seeds.txt, peers.txt, and config.yaml:
 ```bash
 cd /root/qubic/qubic_docker
 ./efi_build.sh https://github.com/qubic/core/tree/madrid-2025
 ```
 3. Deploy the Node and Demo:
+
 After preparing the qubic.vhd and put them in `/root/qubic/qubic.vhd`:
 ```bash
 ./deploy.sh https://github.com/qubic/core/tree/madrid-2025 /root/qubic/qubic-efi-cross-build/Qubic.efi
