@@ -21,6 +21,37 @@ fi
 # Change to the build directory; exit if the directory is inaccessible
 cd /root/qubic/qubic-efi-cross-build || exit 1
 
+# Extract branch from GitHub URL if it's a tree URL
+if [[ "$GITHUB" == *"/tree/"* ]]; then
+    BRANCH=$(echo "$GITHUB" | sed -E 's|.*tree/(.+)/?$|\1|')
+    URL="https://github.com/qubic/core/blob/$BRANCH/src/public_settings.h"
+else
+    URL="$GITHUB"
+fi
+
+# Fetch the public_settings.h file content from the constructed URL
+FILE_CONTENT=$(curl -s "$URL")
+
+# Extract EPOCH value from the fetched content
+EPOCH_VALUE=$(echo "$FILE_CONTENT" | grep -E '#define EPOCH [0-9]+' | sed -E 's/.*#define EPOCH ([0-9]+).*/\1/')
+
+# Extract TICK value (assuming it's defined similarly in public_settings.h)
+TICK_VALUE=$(echo "$FILE_CONTENT" | grep -E '#define TICK [0-9]+' | sed -E 's/.*#define TICK ([0-9]+).*/\1/')
+
+# Check if both EPOCH and TICK values were successfully extracted
+if [ -z "$EPOCH_VALUE" ] || [ -z "$TICK_VALUE" ]; then
+    echo "Error: Failed to extract EPOCH or TICK value from $URL"
+    exit 1
+fi
+
+# Display the detected values
+echo "Detected EPOCH: $EPOCH_VALUE"
+echo "Detected TICK: $TICK_VALUE"
+
+# Modify config.yaml with the extracted EPOCH and TICK values
+sudo sed -i "/^ *EPOCH: /s/[0-9]\+/$EPOCH_VALUE/" config.yaml
+sudo sed -i "/^ *TICK: /s/[0-9]\+/$TICK_VALUE/" config.yaml
+
 # Ensure run_win_build.sh is executable
 sudo chmod +x run_win_build.sh
 
