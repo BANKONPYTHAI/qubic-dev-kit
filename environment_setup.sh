@@ -1,10 +1,29 @@
 #!/bin/bash
 
+# Check if the qubic-cli GitHub URL is provided
+if [ -z "$1" ]; then
+    echo "Usage: $0 <qubic_cli_github_url>"
+    echo "Example: $0 https://github.com/qubic/qubic-cli/tree/madrid-2025"
+    exit 1
+fi
+
+# Extract branch name from the URL
+BRANCH=$(echo "$1" | sed -E 's|.*/tree/(.*)|\1|')
+if [ -z "$BRANCH" ]; then
+    echo "Failed to extract branch name from $1"
+    exit 1
+fi
+
 # Clone the Qubic development kit repository
 git clone --recursive https://github.com/qubic/qubic-dev-kit /root/qubic
 
 # Change to the qubic directory
 cd /root/qubic
+
+# Checkout the specified branch in qubic-cli
+cd qubic-cli
+git checkout "$BRANCH" || { echo "Failed to checkout branch $BRANCH"; exit 1; }
+cd ..
 
 # Copy necessary scripts to core-docker directory
 cp scripts/deploy.sh scripts/cleanup.sh scripts/efi_build.sh scripts/tree_vhd.sh /root/qubic/core-docker
