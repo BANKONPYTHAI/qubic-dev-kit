@@ -54,7 +54,7 @@ MOUNT_POINT="/mnt/qubic"
 sudo mount ${LOOP_DEVICE}p1 $MOUNT_POINT
 
 # Clean up the VHD by removing all files and directories except the 'efi/' directory
-find $MOUNT_POINT -mindepth 1 -maxdepth 1 ! -name "efi" -exec sudo rm -rf {} +
+find $MOUNT_POINT -mindepth 1 -maxdepth 1 ! -name "efi" ! -name "spectrum.*" -exec sudo rm -rf {} +
 
 # Copy new files from /root/filesForVHD/ into the VHD
 sudo cp -r /root/filesForVHD/* $MOUNT_POINT/
