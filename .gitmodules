@@ -7,3 +7,6 @@
 [submodule "qlogging"]
 	path = qlogging
 	url = https://github.com/qubic/qlogging.git
+[submodule "core"]
+	path = core
+	url = https://github.com/qubic/core.git
