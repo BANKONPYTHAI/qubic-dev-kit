@@ -2,27 +2,25 @@
 
 # This script deploys a Qubic setup by first cleaning up existing processes and containers,
 # then preparing a virtual hard disk (VHD), starting a Docker container, and running additional services.
-# It requires two arguments:
-# 1. A GitHub URL to fetch the EPOCH value from the Qubic core repository.
-# 2. The path to a prebuilt Qubic.efi file to use in the deployment.
-# Optionally, a third argument '--no-frontend' can be provided to skip the frontend setup.
+# It requires one argument:
+# 1. The path to a prebuilt Qubic.efi file to use in the deployment.
+# Optionally, a second argument '--no-frontend' can be provided to skip the frontend setup.
 
 # Print a startup message
 echo "Starting deploy script..."
 
 # Check the number of arguments
-if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
-    echo "Usage: $0 [github] [efi_file_path] [--no-frontend]"
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+    echo "Usage: $0 [efi_file_path] [--no-frontend]"
     exit 1
 fi
 
 # Assign arguments to variables
-GITHUB=$1
-EFI_FILE=$2
+EFI_FILE=$1
 SKIP_FRONTEND=false
 
-# Check if the third argument is '--no-frontend'
-if [ "$#" -eq 3 ] && [ "$3" == "--no-frontend" ]; then
+# Check if the second argument is '--no-frontend'
+if [ "$#" -eq 2 ] && [ "$2" == "--no-frontend" ]; then
     SKIP_FRONTEND=true
 fi
 
@@ -61,21 +59,22 @@ else
     echo "Directory /root/qubic/qubic-docker/ does not exist. Skipping docker-compose down."
 fi
 
-# Extract the branch from the GitHub URL if it contains "/tree/" (e.g., .../tree/main)
-if [[ "$GITHUB" == *"/tree/"* ]]; then
-    BRANCH=$(echo "$GITHUB" | sed -E 's|.*tree/(.+)/?$|\1|')
-    URL="https://github.com/qubic/core/blob/$BRANCH/src/public_settings.h"
-else
-    URL="$GITHUB"
+# Determine the path to public_settings.h in the core submodule
+SCRIPT_DIR=$(dirname "$0")
+PUBLIC_SETTINGS_FILE="$SCRIPT_DIR/../core/src/public_settings.h"
+
+# **Check if the public_settings.h file exists**
+if [ ! -f "$PUBLIC_SETTINGS_FILE" ]; then
+    echo "Error: public_settings.h not found at $PUBLIC_SETTINGS_FILE"
+    exit 1
 fi
 
-# Fetch the EPOCH value from the specified GitHub URL by parsing the public_settings.h file
-EPOCH_VALUE=$(curl -s "$URL" | grep -E '#define EPOCH [0-9]+' | sed -E 's/.*#define EPOCH ([0-9]+).*/\1/')
+# Extract the EPOCH value from the local public_settings.h file
+EPOCH_VALUE=$(grep -E '#define EPOCH [0-9]+' "$PUBLIC_SETTINGS_FILE" | sed -E 's/.*#define EPOCH ([0-9]+).*/\1/')
 
 # Check if EPOCH_VALUE was successfully extracted
 if [ -z "$EPOCH_VALUE" ]; then
-    echo "Error: Failed to extract EPOCH value."
-    echo "Check the file: $URL"
+    echo "Error: Failed to extract EPOCH value from $PUBLIC_SETTINGS_FILE"
     exit 1
 fi
 
@@ -131,10 +130,9 @@ docker-compose up -d
 # Step 5: Handle frontend setup based on the flag
 if [ "$SKIP_FRONTEND" = false ]; then
     echo "WARNING: This script will launch the HM25 frontend demo."
-    echo "Make sure you have a consistent node that contains your designated smart contract (SC) in the EFI."
+    echo "Make sure the core submodule at $SCRIPT_DIR/../core is checked out to the correct commit that contains your designated smart contract (SC)."
     echo "If you want to run your own frontend corresponding to your SC, modify this script accordingly."
-    echo "The HM25 frontend demo works with the SC HM25 in the core repository branch: https://github.com/qubic/core/tree/madrid-2025"
-    echo "Ensure you use the correct branch (e.g., madrid-2025) to compile the EFI for HM25."
+    echo "The HM25 frontend demo works with the SC HM25 in the core submodule."
     echo ""
     echo "Setting up the frontend..."
     bash /root/qubic/setup_frontend.sh
