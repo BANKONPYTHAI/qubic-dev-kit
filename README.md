@@ -39,6 +39,7 @@ For step-by-step in more details, please see below.
 
 ## Step 1: Set Up the Environment
 
+---
 
 To begin, you need to set up the development environment on your machine. This step only needs to be run once.
 
@@ -53,6 +54,7 @@ To begin, you need to set up the development environment on your machine. This s
 
 ## Step 2: Prepare Configuration Files
 
+---
 Next, prepare the configuration files required for building the EFI file.
 
 1. Navigate to the Docker Directory:
@@ -72,6 +74,7 @@ Refer to the repository for specific details on how to configure these files cor
 
 ## Step 3: Build the EFI File
 
+---
 To simplify the EFI build process, use the provided efi_build.sh script.
 * Run the EFI Build Script:
   Provide the GitHub branch URL for the Qubic core repository. For this demo, use the madrid-2025 branch.
@@ -83,9 +86,12 @@ To simplify the EFI build process, use the provided efi_build.sh script.
   This script will compile the Qubic.efi file based on the specified branch and your configuration files.
 
 ## Step 4: Prepare the Qubic.vhd and epoch files
-Please download the qubic.vhd file [here](https://files.qubic.world/qubic-vde.zip) and put it to `/root/qubic/qubic.vhd`. The epoch unzipped files should be put in `/root/filesForVHD`. Please refer to [this Discord channel](https://discord.com/channels/768887649540243497/768890555564163092) to download the epoch zip files.
 
+---
+Please download the qubic.vhd file [here](https://files.qubic.world/qubic-vde.zip) and put it to `/root/qubic/qubic.vhd`. The epoch unzipped files should be put in `/root/filesForVHD`. Please refer to [this Discord channel](https://discord.com/channels/768887649540243497/768890555564163092) to download the epoch zip files.
 ## Step 5: Deploy the Qubic Node and HM25 Demo
+
+---
 After compiling the EFI file, deploy the Qubic testnet node and the HM25 demo using the deploy.sh script.
 * Run the Deployment Script:
   Provide the GitHub branch URL and the path to the compiled EFI file. For this demo, use the following command:
