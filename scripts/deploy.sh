@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# This script deploys a Qubic setup by preparing a virtual hard disk (VHD), starting a Docker container,
-# and running additional services. It requires two arguments:
+# This script deploys a Qubic setup by first cleaning up existing processes and containers,
+# then preparing a virtual hard disk (VHD), starting a Docker container, and running additional services.
+# It requires two arguments:
 # 1. A GitHub URL to fetch the EPOCH value from the Qubic core repository.
 # 2. The path to a prebuilt Qubic.efi file to use in the deployment.
 # Optionally, a third argument '--no-frontend' can be provided to skip the frontend setup.
@@ -31,6 +32,35 @@ if [ ! -f "$EFI_FILE" ]; then
     exit 1
 fi
 
+# Cleanup: Step 1 - Kill the broadcaster.py process
+echo "Killing broadcaster.py process..."
+pkill -f broadcaster.py
+[ $? -eq 0 ] && echo "broadcaster.py process killed successfully." || echo "Failed to kill broadcaster.py process or it was not running."
+
+# Cleanup: Step 2 - Stop the Docker container running the qubic-docker image
+echo "Finding and stopping the Docker container with image qubic-docker..."
+CONTAINER_ID=$(docker ps --filter "ancestor=qubic-docker" -q)
+if [ -z "$CONTAINER_ID" ]; then
+    echo "No running container found with image qubic-docker."
+else
+    echo "Stopping container with ID: $CONTAINER_ID"
+    docker stop "$CONTAINER_ID" && echo "Container $CONTAINER_ID stopped successfully." || echo "Failed to stop container $CONTAINER_ID."
+fi
+
+# Cleanup: Step 3 - Kill the epoch_switcher.py process
+echo "Killing epoch_switcher.py process..."
+pkill -f epoch_switcher.py
+[ $? -eq 0 ] && echo "epoch_switcher.py process killed successfully." || echo "Failed to kill epoch_switcher.py process or it was not running."
+
+# Cleanup: Step 4 - Run docker-compose down in /root/qubic/qubic-docker/
+echo "Running docker-compose down in /root/qubic/qubic-docker/..."
+if cd /root/qubic/qubic_docker/; then
+    docker-compose down && echo "docker-compose down executed successfully." || echo "Failed to execute docker-compose down."
+    cd - >/dev/null  # Return to previous directory silently
+else
+    echo "Directory /root/qubic/qubic-docker/ does not exist. Skipping docker-compose down."
+fi
+
 # Extract the branch from the GitHub URL if it contains "/tree/" (e.g., .../tree/main)
 if [[ "$GITHUB" == *"/tree/"* ]]; then
     BRANCH=$(echo "$GITHUB" | sed -E 's|.*tree/(.+)/?$|\1|')
@@ -53,11 +83,9 @@ echo "Detected EPOCH: $EPOCH_VALUE"
 
 # Step 1: Prepare the Virtual Hard Disk (VHD)
 echo "Mounting VHD..."
-# Set up a loop device for the VHD file and display its path
 LOOP_DEVICE=$(sudo losetup -f --show --partscan /root/qubic/qubic.vhd)
 echo "VHD mounted on $LOOP_DEVICE"
 MOUNT_POINT="/mnt/qubic"
-# Mount the first partition of the VHD to the mount point
 sudo mount ${LOOP_DEVICE}p1 $MOUNT_POINT
 
 # Clean up the VHD by removing all files and directories except the 'efi/' directory and 'spectrum.*' files
@@ -81,9 +109,7 @@ echo "VHD preparation completed."
 
 # Step 2: Start the Docker container
 echo "Starting Docker container..."
-# Change to the Docker directory or exit if it fails
 cd /root/qubic/qubic_docker || exit 1
-# Run the container with the specified parameters, including the prebuilt EFI file path
 script -qc "./run.sh --epoch ${EPOCH_VALUE} --vhd /root/qubic/qubic.vhd --port 31841 --memory 116243 --cpus 14 --efi $EFI_FILE" /dev/null &
 
 # Wait briefly to ensure the container starts
@@ -92,19 +118,14 @@ sleep 2
 # Step 3: Run the broadcaster and epoch switcher scripts
 echo "Waiting for the node to start up..."
 sleep 2
-# Change to the scripts directory or exit if it fails
 cd /root/qubic/scripts/ || exit 1
-# Run broadcaster.py in the foreground (assumes it completes or is intended to block briefly)
 python3 broadcaster.py
-# Run epoch_switcher.py in the background, redirecting output to a log file
 nohup python3 epoch_switcher.py > /root/qubic/scripts/epoch_switcher.log 2>&1 &
 
 # Step 4: Start Docker Compose services for qubic-http and qubic-nodes
 cd /root/qubic/qubic_docker/ || exit 1
-# Export the host IP address to a variable and save it to a .env file for Docker Compose
 export HOST_IP=$(hostname -I | awk '{print $1}')
 echo "HOST_IP=$HOST_IP" > .env
-# Start the Docker Compose services in detached mode
 docker-compose up -d
 
 # Step 5: Handle frontend setup based on the flag
