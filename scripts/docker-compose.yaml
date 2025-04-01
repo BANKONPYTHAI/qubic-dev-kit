@@ -98,7 +98,7 @@ services:
     volumes:
       - ./store/archiver:/app/store
     networks:
-      - traefik
+      - qubic
     depends_on:
       qubic-nodes:
         condition: service_healthy
