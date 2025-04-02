@@ -6,21 +6,6 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Handle the qubic-cli GitHub URL argument
-if [ $# -eq 0 ]; then
-    echo "Warning: No qubic-cli URL provided. You should use a URL like https://github.com/qubic/qubic-cli/tree/madrid-2025."
-    echo "Using default branch 'main'."
-    BRANCH="main"
-else
-    # Extract branch name from the provided URL
-    BRANCH=$(echo "$1" | sed -E 's|.*/tree/(.*)|\1|')
-    if [ -z "$BRANCH" ]; then
-        echo "Failed to extract branch name from $1. Please provide a valid URL like https://github.com/qubic/qubic-cli/tree/madrid-2025."
-        echo "Using default branch 'main'."
-        BRANCH="main"
-    fi
-fi
-
 # Clone the Qubic development kit repository
 git clone --recursive https://github.com/qubic/qubic-dev-kit /root/qubic
 
@@ -72,16 +57,19 @@ fi
 curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
-# Build qubic-cli with the specified branch
+# Create directory and unzip Ep152.zip
+mkdir -p /root/filesForVHD
+unzip /root/qubic/Ep152.zip -d /root/filesForVHD/
+
+# Build qubic-cli
 cd /root/qubic/qubic-cli || { echo "Failed to change to qubic-cli directory"; exit 1; }
-git checkout "$BRANCH" || { echo "Failed to checkout branch $BRANCH"; exit 1; }
 mkdir -p build
 cd build
 cmake ..
 make
 cp qubic-cli /root/qubic/qubic_docker
 
-# Build qlogging (no branch specification required)
+# Build qlogging
 cd /root/qubic/qlogging
 mkdir -p build
 cd build
