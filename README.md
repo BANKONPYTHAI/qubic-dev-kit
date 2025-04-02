@@ -50,9 +50,11 @@ To begin, you need to set up the development environment on your machine. This s
   ```
   This script will also download the qubic.vhd from [https://files.qubic.world/qubic-vde.zip](https://files.qubic.world/qubic-vde.zip) for you. 
 
-## Step 2: Prepare Configuration Files
+## Step 2: Prepare Configuration Files and build the EFI File
 
 ---
+### Prepare the Configuration Files
+
 Next, prepare the configuration files required for building the EFI file.
 
 1. Navigate to the Docker Directory:
@@ -70,9 +72,8 @@ Prepare the following files as instructed in the [qubic-efi-cross-build](https:/
 
 Refer to the repository for specific details on how to configure these files correctly.
 
-## Step 3: Build the EFI File
+### Build the EFI file
 
----
 To simplify the EFI build process, use the provided efi_build.sh script.
 * Run the EFI Build Script:
   Provide the GitHub branch URL for the Qubic core repository. For this demo, use the madrid-2025 branch.
@@ -83,7 +84,7 @@ To simplify the EFI build process, use the provided efi_build.sh script.
 
   This script will compile the Qubic.efi file based on the specified branch and your configuration files.
 
-## Step 4: Deploy the Qubic Node and HM25 Demo
+## Step 3: Deploy the Qubic Node and HM25 Demo
 
 ---
 After compiling the EFI file, deploy the Qubic testnet node and the HM25 demo using the deploy.sh script.
