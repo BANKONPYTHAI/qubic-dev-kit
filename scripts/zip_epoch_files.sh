@@ -14,6 +14,15 @@ set -e
 # If you omit --out, it defaults to "./Ep<EPOCH_NUMBER>.zip"
 #############################################################################
 
+# Function to convert a path to absolute
+abspath() {
+  if [[ "$1" = /* ]]; then
+    echo "$1"
+  else
+    echo "$(pwd)/$1"
+  fi
+}
+
 # Default variables
 EPOCH_NUMBER=""
 VHD_PATH=""
@@ -54,6 +63,9 @@ fi
 if [[ -z "$ZIP_OUT" ]]; then
   ZIP_OUT="Ep${EPOCH_NUMBER}.zip"
 fi
+
+# Convert ZIP_OUT to absolute path
+ZIP_OUT=$(abspath "$ZIP_OUT")
 
 # Print summary
 echo "=========================================="
@@ -99,11 +111,6 @@ echo "Mounting $PARTITION to $MOUNT_DIR..."
 sudo mount "$PARTITION" "$MOUNT_DIR"
 
 # Gather all contract/universe/spectrum.*.EPOCH_NUMBER files
-# We'll collect files named:
-#   contract*.<EPOCH_NUMBER>
-#   universe.<EPOCH_NUMBER>
-#   spectrum.<EPOCH_NUMBER>
-# in the mount directory
 echo "Searching for contract/universe/spectrum for epoch $EPOCH_NUMBER in $MOUNT_DIR..."
 
 FILES_TO_ZIP=()
@@ -131,27 +138,19 @@ fi
 
 # Zip them up
 echo "Creating zip archive: $ZIP_OUT"
-# We'll cd to the mount directory so the zip doesn't store absolute paths
 pushd "$MOUNT_DIR" >/dev/null
 
 # Build an array of relative filenames
 REL_FILES=()
 for f in "${FILES_TO_ZIP[@]}"; do
-  # each f is /mnt/qubic-zip/<filename>
-  # we want just <filename>
   basename_f=$(basename "$f")
   REL_FILES+=("$basename_f")
 done
 
-# We'll do a zip command (requires "zip" installed).
+# Create the zip file at the absolute ZIP_OUT path
 sudo zip -r -9 "$ZIP_OUT" "${REL_FILES[@]}"
 
-# Move the resulting zip from $MOUNT_DIR/<ZIP_OUT> to the original working dir (or anywhere).
 popd >/dev/null
 
-# The zip file ends up in $MOUNT_DIR/<ZIP_OUT>.
-# We'll copy it back to the user directory:
-sudo cp "$MOUNT_DIR/$ZIP_OUT" "$ZIP_OUT"
 echo "Created zip at: $ZIP_OUT"
-
 echo "Done."
