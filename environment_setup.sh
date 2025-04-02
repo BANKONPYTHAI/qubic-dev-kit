@@ -24,12 +24,11 @@ apt update
 apt install -y freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12 dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree unzip
 
 # Create mount point
-mkdir /mnt/qubic
+mkdir -p /mnt/qubic
 
 # Download and extract qubic.vhd
 echo "Downloading qubic-vde.zip..."
 wget https://files.qubic.world/qubic-vde.zip -O /tmp/qubic-vde.zip
-
 if [ $? -ne 0 ]; then
     echo "Failed to download qubic-vde.zip"
     exit 1
@@ -37,13 +36,15 @@ fi
 
 echo "Extracting qubic-vde.zip to /root/qubic/..."
 unzip /tmp/qubic-vde.zip -d /root/qubic/
-
 if [ ! -f /root/qubic/qubic.vhd ]; then
     echo "qubic.vhd not found after extraction. Please check the ZIP file contents."
     exit 1
 fi
 
 echo "qubic.vhd successfully extracted to /root/qubic/qubic.vhd"
+
+rm /tmp/qubic-vde.zip
+echo "Deleted /tmp/qubic-vde.zip"
 
 # Check if VirtualBox is installed and its version
 DESIRED_VBOX_VERSION="7.1.4"
@@ -76,9 +77,22 @@ fi
 curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
+# Remove existing /root/filesForVHD if it exists
+rm -rf /root/filesForVHD
+
 # Create directory and unzip Ep152.zip
 mkdir -p /root/filesForVHD
+echo "Created new /root/filesForVHD"
+
+# Check if Ep152.zip exists
+if [ ! -f /root/qubic/Ep152.zip ]; then
+    echo "Ep152.zip not found in /root/qubic/"
+    exit 1
+fi
+
+# Unzip Ep152.zip into the new directory
 unzip /root/qubic/Ep152.zip -d /root/filesForVHD/
+echo "Unzipped Ep152.zip to /root/filesForVHD/"
 
 # Build qubic-cli
 cd /root/qubic/qubic-cli || { echo "Failed to change to qubic-cli directory"; exit 1; }
@@ -95,3 +109,5 @@ cd build
 cmake ..
 make
 cp qlogging /root/qubic/qubic_docker
+
+echo "Script completed successfully."
