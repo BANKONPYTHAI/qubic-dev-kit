@@ -31,6 +31,13 @@ if [ -z "$HOST_IP" ]; then
     echo "Failed to determine host IP address"
     exit 1
 fi
+
+# Check if peers.txt ends with a newline; if not, add one
+if [ -s peers.txt ] && [ "$(tail -c 1 peers.txt)" != "" ]; then
+    echo | sudo tee -a peers.txt > /dev/null
+fi
+
+# Append the host's IP
 echo "$HOST_IP" | sudo tee -a peers.txt || { echo "Failed to append IP to peers.txt"; exit 1; }
 
 # Extract branch from GitHub URL if it's a tree URL
