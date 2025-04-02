@@ -35,7 +35,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Extracting qubic-vde.zip to /root/qubic/..."
-unzip /tmp/qubic-vde.zip -d /root/qubic/
+unzip -o /tmp/qubic-vde.zip -d /root/qubic/
 if [ ! -f /root/qubic/qubic.vhd ]; then
     echo "qubic.vhd not found after extraction. Please check the ZIP file contents."
     exit 1
