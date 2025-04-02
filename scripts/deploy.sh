@@ -118,16 +118,20 @@ script -qc "./run.sh --epoch ${EPOCH_VALUE} --vhd /root/qubic/qubic.vhd --port 3
 # Wait briefly to ensure the container starts
 sleep 2
 
+HOST_IP=$(hostname -I | awk '{print $1}')
+echo "Determined HOST_IP: $HOST_IP"
+
 # Step 3: Run the broadcaster and epoch switcher scripts
 echo "Waiting for the node to start up..."
 sleep 2
 cd /root/qubic/scripts/ || exit 1
-python3 broadcaster.py
+# Pass the determined HOST_IP to broadcaster.py
+echo "Running broadcaster with node IP: $HOST_IP"
+python3 broadcaster.py --node_ips $HOST_IP
 nohup python3 epoch_switcher.py > /root/qubic/scripts/epoch_switcher.log 2>&1 &
 
 # Step 4: Start Docker Compose services for qubic-http and qubic-nodes
 cd /root/qubic/qubic_docker/ || exit 1
-export HOST_IP=$(hostname -I | awk '{print $1}')
 echo "HOST_IP=$HOST_IP" > .env
 docker-compose up -d
 
