@@ -100,6 +100,10 @@ for file in $MOUNT_POINT/*.*; do
     fi
 done
 
+# List the contents of the VHD
+echo "Listing directory structure with tree:"
+sudo tree "$MOUNT_POINT"
+
 # Unmount the VHD and detach the loop device
 cd /
 sudo umount $MOUNT_POINT

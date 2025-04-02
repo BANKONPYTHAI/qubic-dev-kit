@@ -36,7 +36,7 @@ mv core-docker qubic_docker
 
 # Update package list and install required packages
 apt update
-apt install -y freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12 dkms build-essential linux-headers-$(uname -r) gcc make perl curl
+apt install -y freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12 dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree
 
 # Create mount point
 mkdir /mnt/qubic
