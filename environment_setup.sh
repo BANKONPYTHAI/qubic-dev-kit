@@ -21,10 +21,29 @@ mv core-docker qubic_docker
 
 # Update package list and install required packages
 apt update
-apt install -y freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12 dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree
+apt install -y freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12 dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree unzip
 
 # Create mount point
 mkdir /mnt/qubic
+
+# Download and extract qubic.vhd
+echo "Downloading qubic-vde.zip..."
+wget https://files.qubic.world/qubic-vde.zip -O /tmp/qubic-vde.zip
+
+if [ $? -ne 0 ]; then
+    echo "Failed to download qubic-vde.zip"
+    exit 1
+fi
+
+echo "Extracting qubic-vde.zip to /root/qubic/..."
+unzip /tmp/qubic-vde.zip -d /root/qubic/
+
+if [ ! -f /root/qubic/qubic.vhd ]; then
+    echo "qubic.vhd not found after extraction. Please check the ZIP file contents."
+    exit 1
+fi
+
+echo "qubic.vhd successfully extracted to /root/qubic/qubic.vhd"
 
 # Check if VirtualBox is installed and its version
 DESIRED_VBOX_VERSION="7.1.4"
