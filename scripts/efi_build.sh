@@ -21,6 +21,18 @@ fi
 # Change to the build directory; exit if the directory is inaccessible
 cd /root/qubic/qubic-efi-cross-build || exit 1
 
+# Copy seeds.txt and peers.txt from /root/qubic/scripts to current directory
+sudo cp -f /root/qubic/scripts/seeds.txt . || { echo "Failed to copy seeds.txt"; exit 1; }
+sudo cp -f /root/qubic/scripts/peers.txt . || { echo "Failed to copy peers.txt"; exit 1; }
+
+# Append host's IP to peers.txt
+HOST_IP=$(hostname -I | awk '{print $1}')
+if [ -z "$HOST_IP" ]; then
+    echo "Failed to determine host IP address"
+    exit 1
+fi
+echo "$HOST_IP" | sudo tee -a peers.txt || { echo "Failed to append IP to peers.txt"; exit 1; }
+
 # Extract branch from GitHub URL if it's a tree URL
 if [[ "$GITHUB" == *"/tree/"* ]]; then
     BRANCH=$(echo "$GITHUB" | sed -E 's|.*tree/(.+)/?$|\1|')
