@@ -101,6 +101,7 @@ cd build
 cmake ..
 make
 cp qubic-cli /root/qubic/qubic_docker
+cp qubic-cli /root/qubic/scripts
 
 # Build qlogging
 cd /root/qubic/qlogging
@@ -109,5 +110,6 @@ cd build
 cmake ..
 make
 cp qlogging /root/qubic/qubic_docker
+cp qlogging /root/qubic/scripts
 
 echo "Script completed successfully."
