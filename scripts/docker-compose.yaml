@@ -25,7 +25,7 @@ services:
       QUBIC_API_SIDECAR_SERVER_MAX_TICK_FETCH_URL: "http://qubic-nodes:8080/max-tick"
       QUBIC_API_SIDECAR_POOL_NODE_FETCHER_URL: "http://qubic-nodes:8080/status"
       QUBIC_API_SIDECAR_POOL_NODE_FETCHER_TIMEOUT: "20s"
-      QUBIC_API_SIDECAR_POOL_NODE_PORT: "31842" # Change node port if needed
+      QUBIC_API_SIDECAR_POOL_NODE_PORT: "31841" # Change node port if needed
     networks:
       - traefik
     depends_on:
@@ -57,7 +57,7 @@ services:
       QUBIC_EVENTS_POOL_NODE_PASSCODES: "193.135.9.63:AAAAAAAAAAEAAAAAAAAAAgAAAAAAAAADAAAAAAAAAAQ="
       QUBIC_EVENTS_PUB_SUB_ENABLED: "false"
       QUBIC_EVENTS_QUBIC_PROCESS_TICK_TIMEOUT: "5s"
-      QUBIC_EVENTS_QUBIC_NODE_PORT: "31842"
+      QUBIC_EVENTS_QUBIC_NODE_PORT: "31841"
     volumes:
       - ./store/events:/app/store
     networks:
@@ -95,7 +95,7 @@ services:
       QUBIC_ARCHIVER_SERVER_CHAIN_TICK_FETCH_URL: "http://qubic-nodes:8080/max-tick"
       QUBIC_ARCHIVER_POOL_NODE_FETCHER_URL: "http://qubic-nodes:8080/status"
       QUBIC_ARCHIVER_QUBIC_PROCESS_TICK_TIMEOUT: "5s"
-      QUBIC_ARCHIVER_QUBIC_NODE_PORT: "31842" # Change node port if needed
+      QUBIC_ARCHIVER_QUBIC_NODE_PORT: "31841" # Change node port if needed
       QUBIC_ARCHIVER_QUBIC_ARBITRATOR_IDENTITY: "MEFKYFCDXDUILCAJKOIKWQAPENJDUHSSYPBRWFOTLALILAYWQFDSITJELLHG"
       QUBIC_ARCHIVER_QUBIC_DISABLE_TRANSACTION_STATUS_ADDON: true
     volumes:
@@ -113,7 +113,7 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       QUBIC_NODES_QUBIC_PEER_LIST: "${HOST_IP}" # Insert list of node IPs here. Ex: "123.12.12.123;321.32.32.321;312.31.31.312"
-      QUBIC_NODES_QUBIC_PEER_PORT: "31842"
+      QUBIC_NODES_QUBIC_PEER_PORT: "31841"
     networks:
       - traefik
     healthcheck:
