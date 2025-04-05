@@ -46,7 +46,7 @@ To begin, you need to set up the development environment on your machine. This s
 ## Step 2: Deploy the Qubic Node and HM25 Demo
 
 ---
-Given the [pre-compiled EFI file](./Qubic.efi), deploy the Qubic testnet node and the HM25 demo using the deploy.sh script. 
+Given the [pre-compiled EFI file](./Qubic.efi) (which is built upon [this branch](https://github.com/qubic/core/tree/madrid-2025) in core), deploy the Qubic testnet node and the HM25 demo using the deploy.sh script. 
 For a custom build of the EFI file for Qubic testnet, please refer to [Kavatak's guide here](https://github.com/KavataK/QubicNetworkDeploymentGuide).
 * Run the Deployment Script:
   For this demo, use the following command:
