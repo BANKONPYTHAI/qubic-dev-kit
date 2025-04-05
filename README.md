@@ -37,7 +37,7 @@ To begin, you need to set up the development environment on your machine. This s
 
 * Run the Environment Setup Script:
 
-  Execute the environment_setup.sh script to install dependencies and clone the necessary repositories.
+  Execute the environment_setup.sh script to install dependencies and clone the necessary repositories and build them all.
   ```bash
   sudo ./environment_setup.sh
   ```
@@ -46,7 +46,8 @@ To begin, you need to set up the development environment on your machine. This s
 ## Step 2: Deploy the Qubic Node and HM25 Demo
 
 ---
-Given the [pre-compiled EFI file](./Qubic.efi), deploy the Qubic testnet node and the HM25 demo using the deploy.sh script.
+Given the [pre-compiled EFI file](./Qubic.efi), deploy the Qubic testnet node and the HM25 demo using the deploy.sh script. 
+For a custom build of the EFI file for Qubic testnet, please refer to [Kavatak's guide here](https://github.com/KavataK/QubicNetworkDeploymentGuide).
 * Run the Deployment Script:
   For this demo, use the following command:
   ```bash
