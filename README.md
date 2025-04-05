@@ -20,17 +20,10 @@ This repository contains the Qubic Devkit, designed to help developers set up a 
 ```bash
 sudo ./environment_setup.sh
 ```
-2. Navigate and Build EFI:
-   
-After preparing the seeds.txt, peers.txt, and config.yaml:
-```bash
-cd /root/qubic/qubic_docker
-./efi_build.sh https://github.com/qubic/core/tree/madrid-2025
-```
-3. Deploy the Node and Demo:
+2. Deploy the Node and Demo:
 
 ```bash
-./deploy.sh /root/qubic/qubic-efi-cross-build/Qubic.efi
+./deploy.sh /root/qubic/Qubic.efi
 ```
 
 
@@ -50,48 +43,14 @@ To begin, you need to set up the development environment on your machine. This s
   ```
   This script will also download the qubic.vhd from [https://files.qubic.world/qubic-vde.zip](https://files.qubic.world/qubic-vde.zip) for you. 
 
-## Step 2: Prepare Configuration Files and build the EFI File
+## Step 2: Deploy the Qubic Node and HM25 Demo
 
 ---
-### Prepare the Configuration Files
-
-Next, prepare the configuration files required for building the EFI file.
-
-1. Navigate to the Docker Directory:
-
-```bash
-cd /root/qubic/qubic_docker
-```
-
-2. Create Configuration Files:
-
-Prepare the following files as instructed in the [qubic-efi-cross-build](https://github.com/icyblob/qubic-efi-cross-build/tree/main) repository:
-* seeds.txt
-* peers.txt
-* config.yaml
-
-Refer to the repository for specific details on how to configure these files correctly.
-
-### Build the EFI file
-
-To simplify the EFI build process, use the provided efi_build.sh script.
-* Run the EFI Build Script:
-  Provide the GitHub branch URL for the Qubic core repository. For this demo, use the madrid-2025 branch.
-
-  ```bash
-  ./efi_build.sh https://github.com/qubic/core/tree/madrid-2025
-  ```
-
-  This script will compile the Qubic.efi file based on the specified branch and your configuration files.
-
-## Step 3: Deploy the Qubic Node and HM25 Demo
-
----
-After compiling the EFI file, deploy the Qubic testnet node and the HM25 demo using the deploy.sh script.
+Given the [pre-compiled EFI file](./Qubic.efi), deploy the Qubic testnet node and the HM25 demo using the deploy.sh script.
 * Run the Deployment Script:
   For this demo, use the following command:
   ```bash
-  ./deploy.sh /root/qubic/qubic-efi-cross-build/Qubic.efi
+  ./deploy.sh /root/qubic/Qubic.efi
   ```
   This script will:
   * Prepare the qubic.vhd with epoch 152 for you using the zip file Ep152.zip attached in this repo.
