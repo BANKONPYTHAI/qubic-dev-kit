@@ -5,7 +5,7 @@
 #
 # This script installs the Qubic development environment.
 # Changelog:
-# - v18: Added key developer resource links to the final summary.
+# - v18: Overrode the standard qubic-cli with the BANKONPYTHAI fork.
 # - v17: Refined the Qubic icon to "▀█" for better logo accuracy.
 # - v16: Replaced placeholder icon with the official Qubic logo icon (‖).
 # ==============================================================================
@@ -17,6 +17,7 @@ VBOX_BUILD="165100"
 VBOX_EXTPACK_LICENSE="eb31505e56e9b4d0fbca139104da41ac6f6b98f8e78968bdf01b1f3da3c4f9ae"
 DOCKER_COMPOSE_VERSION="v2.26.1"
 QUBIC_REPO_URL="https://github.com/qubic/qubic-dev-kit"
+QUBIC_CLI_FORK_URL="https://github.com/BANKONPYTHAI/qubic-cli"
 VHD_URL="https://files.qubic.world/qubic-vde.zip"
 
 # --- Colors and Icons ---
@@ -95,14 +96,20 @@ function install_dependencies() {
 function clone_repo() {
     if [ -d "${INSTALL_DIR}/.git" ]; then
         log_warn "Qubic repository already exists."
-        log_info "Verifying and initializing submodules to ensure they are present..."
+        log_info "Verifying and initializing submodules..."
         git submodule update --init --recursive
-        log_success "Submodules are up to date."
+        log_success "Submodules synchronized."
     else
-        log_info "Cloning Qubic development kit and all submodules..."
+        log_info "Cloning Qubic development kit and its submodules..."
         git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
-        log_success "Qubic repository cloned successfully."
+        log_success "Qubic repository and submodules cloned."
     fi
+
+    # --- Override qubic-cli submodule with the specified fork ---
+    log_milestone "Replacing original qubic-cli with the BANKONPYTHAI fork..."
+    rm -rf "${INSTALL_DIR}/qubic-cli"
+    git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone "${QUBIC_CLI_FORK_URL}" "${INSTALL_DIR}/qubic-cli"
+    log_success "Successfully cloned forked qubic-cli."
 }
 
 function setup_virtualbox() {
