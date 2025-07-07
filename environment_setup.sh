@@ -1,18 +1,10 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (Corrected)
+# Qubic Development Kit Installer - Best-Practice Version (Corrected v3)
 #
-# This script installs the Qubic development environment, including dependencies,
-# VirtualBox, Docker, and builds necessary Qubic tools.
-#
-# Best Practices Implemented:
-# - Flexible installation path (default: /opt/qubic)
-# - Rich, color-coded logging with icons.
-# - Modular functions for clarity and maintainability.
-# - Robust error handling (set -euo pipefail).
-# - Centralized configuration variables.
-# - Detailed summary report upon completion.
+# This script installs the Qubic development environment. This version corrects
+# a syntax error in the VirtualBox installation logic.
 # ==============================================================================
 
 # --- Script Configuration ---
@@ -106,40 +98,43 @@ function setup_virtualbox() {
     installed_ver=$(VBoxManage --version 2>/dev/null | cut -d'r' -f1 || echo "none")
 
     if [[ "${installed_ver}" == "${VBOX_VERSION}" ]]; then
-        log_warn "VirtualBox ${VBOX_VERSION} is already installed. Skipping."
+        log_success "VirtualBox ${VBOX_VERSION} is already installed. Skipping."
         add_to_summary "VirtualBox ${VBOX_VERSION} was already installed."
         return
     elif [[ "${installed_ver}" != "none" ]]; then
-        log_warn "Found existing VirtualBox version ${installed_ver}. The script will attempt to install version ${VBOX_VERSION}."
-        log_warn "If this fails, please uninstall the old version manually and re-run."
+        log_error "An unsupported version of VirtualBox (${installed_ver}) is installed."
+        log_error "This script requires version ${VBOX_VERSION}."
+        log_error "Please uninstall the current version and re-run the script."
+        exit 1
+    else
+        # This block now correctly contains the installation logic.
+        log_info "No VirtualBox installation found. Proceeding with new installation."
+        
+        local vbox_deb="virtualbox-7.1_${VBOX_VERSION}-${VBOX_BUILD}~Ubuntu~jammy_amd64.deb"
+        local extpack="Oracle_VirtualBox_Extension_Pack-${VBOX_VERSION}.vbox-extpack"
+        local download_url="https://download.virtualbox.org/virtualbox/${VBOX_VERSION}"
+
+        log_info "Downloading VirtualBox ${VBOX_VERSION}..."
+        wget -q -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}"
+        wget -q -O "/tmp/${extpack}" "${download_url}/${extpack}"
+        log_success "VirtualBox packages downloaded."
+
+        log_info "Installing VirtualBox..."
+        dpkg -i "/tmp/${vbox_deb}" || apt-get -y --fix-broken install
+        log_success "VirtualBox installed."
+
+        log_info "Installing VirtualBox Extension Pack..."
+        VBoxManage extpack install --replace "/tmp/${extpack}" --accept-license="${VBOX_EXTPACK_LICENSE}"
+        log_success "VirtualBox Extension Pack installed."
+
+        log_info "Configuring VirtualBox kernel modules..."
+        /sbin/vboxconfig
+        log_success "VirtualBox configured."
+
+        rm -f "/tmp/${vbox_deb}" "/tmp/${extpack}"
+        add_to_summary "Installed and configured VirtualBox ${VBOX_VERSION} with Extension Pack."
     fi
-
-    local vbox_deb="virtualbox-${VBOX_VERSION:0:3}_${VBOX_VERSION}-${VBOX_BUILD}~Ubuntu~jammy_amd64.deb"
-    local extpack="Oracle_VirtualBox_Extension_Pack-${VBOX_VERSION}.vbox-extpack"
-    local download_url="https://download.virtualbox.org/virtualbox/${VBOX_VERSION}"
-
-    log_info "Downloading VirtualBox ${VBOX_VERSION}..."
-    wget -q -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}"
-    wget -q -O "/tmp/${extpack}" "${download_url}/${extpack}"
-    log_success "VirtualBox packages downloaded."
-
-    log_info "Installing VirtualBox..."
-    # Allow dpkg to fail, then fix with apt
-    dpkg -i "/tmp/${vbox_deb}" || apt-get --fix-broken install -y
-    log_success "VirtualBox installed."
-
-    log_info "Installing VirtualBox Extension Pack..."
-    echo "y" | VBoxManage extpack install --replace "/tmp/${extpack}" --accept-license="${VBOX_EXTPACK_LICENSE}"
-    log_success "VirtualBox Extension Pack installed."
-
-    log_info "Configuring VirtualBox kernel modules..."
-    /sbin/vboxconfig
-    log_success "VirtualBox configured."
-
-    rm -f "/tmp/${vbox_deb}" "/tmp/${extpack}"
-    add_to_summary "Installed and configured VirtualBox ${VBOX_VERSION} with Extension Pack."
 }
-
 
 function install_docker_compose() {
     log_info "Installing Docker Compose..."
@@ -151,14 +146,12 @@ function install_docker_compose() {
 
 function prepare_qubic_files() {
     log_info "Preparing Qubic file structure..."
-    # Create and organize the docker directory
     cp scripts/deploy.sh scripts/docker-compose.yaml scripts/cleanup.sh scripts/efi_build.sh scripts/tree_vhd.sh core-docker/
     cp -r scripts/letsencrypt core-docker/
     mv core-docker qubic_docker
     log_success "Docker scripts organized into 'qubic_docker'."
     add_to_summary "Organized Docker-related files."
 
-    # Download and extract VHD
     log_info "Downloading Qubic VHD image..."
     wget -q -O "/tmp/qubic-vde.zip" "${VHD_URL}"
     log_success "VHD download complete."
@@ -169,7 +162,6 @@ function prepare_qubic_files() {
     log_success "Extracted qubic.vhd."
     add_to_summary "Downloaded and extracted the Qubic VHD image."
 
-    # Prepare files for VHD
     log_info "Preparing epoch files for VHD..."
     rm -rf filesForVHD
     mkdir -p filesForVHD
@@ -181,7 +173,6 @@ function prepare_qubic_files() {
 function build_tools() {
     log_info "Building Qubic tools (qubic-cli, qlogging)..."
     
-    # Build qubic-cli
     pushd "${INSTALL_DIR}/qubic-cli" > /dev/null
     mkdir -p build && cd build
     cmake .. > /dev/null && make > /dev/null
@@ -190,7 +181,6 @@ function build_tools() {
     popd > /dev/null
     log_success "Built 'qubic-cli' and copied to relevant directories."
 
-    # Build qlogging
     pushd "${INSTALL_DIR}/qlogging" > /dev/null
     mkdir -p build && cd build
     cmake .. > /dev/null && make > /dev/null
