@@ -5,8 +5,9 @@
 #
 # This script installs the Qubic development environment.
 # Changelog:
-# - v14: Adjusted the final success message to display 7 rockets.
-# - v13: Introduced new 📉 warning icon and repurposed ₿ for milestones.
+# - v14: Confirmed all warnings and prompts use the 📉 icon.
+#        Adjusted the final success message to display 7 rockets.
+# - v13: Introduced 📉 warning icon and repurposed ₿ for milestones.
 # ==============================================================================
 
 # --- Script Configuration ---
