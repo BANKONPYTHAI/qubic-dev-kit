@@ -224,7 +224,7 @@ function prepare_qubic_files() {
             log_error "Download failed: ZIP file not found."
             exit 1
         fi
-        unzip -o "${vhd_zip_path}" -d "${INSTALL_DIR}" >/dev/null
+        unzip -ov "${vhd_zip_path}" -d "${INSTALL_DIR}" >/dev/null
         rm "${vhd_zip_path}"
         if [ ! -f "${INSTALL_DIR}/qubic.vhd" ]; then
             log_error "Extraction failed: qubic.vhd not found."
@@ -236,7 +236,7 @@ function prepare_qubic_files() {
     log_info "Preparing epoch files for VHD..."
     rm -rf filesForVHD
     mkdir -p filesForVHD
-    unzip -o Ep152.zip -d filesForVHD/ >/dev/null
+    unzip -ov Ep152.zip -d filesForVHD/ >/dev/null
     log_success "Epoch files (Ep152) prepared."
 }
 
