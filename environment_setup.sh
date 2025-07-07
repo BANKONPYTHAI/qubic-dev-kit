@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (v18)
+# Qubic Development Kit Installer - Best-Practice Version (v23)
 #
 # This script installs the Qubic development environment.
 # Changelog:
-# - v18: Overrode the standard qubic-cli with the BANKONPYTHAI fork.
-# - v17: Refined the Qubic icon to "▀█" for better logo accuracy.
-# - v16: Replaced placeholder icon with the official Qubic logo icon (‖).
+# - v23: Added a timed, interactive prompt to allow users to choose between
+#        the official qubic-cli and the BANKONPYTHAI fork.
+# - v22: Corrected a critical syntax error (unexpected EOF).
+# - v21: Build process output is now streamed directly to the console.
 # ==============================================================================
 
 # --- Script Configuration ---
@@ -17,6 +18,7 @@ VBOX_BUILD="165100"
 VBOX_EXTPACK_LICENSE="eb31505e56e9b4d0fbca139104da41ac6f6b98f8e78968bdf01b1f3da3c4f9ae"
 DOCKER_COMPOSE_VERSION="v2.26.1"
 QUBIC_REPO_URL="https://github.com/qubic/qubic-dev-kit"
+QUBIC_CLI_OFFICIAL_URL="https://github.com/qubic/qubic-cli"
 QUBIC_CLI_FORK_URL="https://github.com/BANKONPYTHAI/qubic-cli"
 VHD_URL="https://files.qubic.world/qubic-vde.zip"
 
@@ -59,9 +61,10 @@ check_root() {
 function setup_environment() {
     set -euo pipefail
     trap 'cleanup_on_error' ERR
-    log_info "Creating installation directory: ${INSTALL_DIR}"
+    log_info "Creating installation directory..."
     mkdir -p "${INSTALL_DIR}"
     cd "${INSTALL_DIR}"
+    log_success "Workspace is ready at ${INSTALL_DIR}"
 }
 
 function cleanup_on_error() {
@@ -76,12 +79,11 @@ function install_dependencies() {
     read response
 
     if [[ -z "$response" || "$response" =~ ^[Yy]$ ]]; then
-        log_info "Updating package lists as requested (errors will be shown)..."
+        log_info "Updating package lists as requested..."
         apt-get update -y >/dev/null
         log_success "Package lists updated."
     else
         log_warn "Skipping package list update at user's request."
-        log_warn "Dependency installation may fail if local package lists are stale."
     fi
 
     log_info "Installing system dependencies..."
@@ -95,21 +97,37 @@ function install_dependencies() {
 
 function clone_repo() {
     if [ -d "${INSTALL_DIR}/.git" ]; then
-        log_warn "Qubic repository already exists."
-        log_info "Verifying and initializing submodules..."
+        log_warn "Qubic repository already exists. Synchronizing submodules..."
         git submodule update --init --recursive
-        log_success "Submodules synchronized."
     else
         log_info "Cloning Qubic development kit and its submodules..."
         git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
-        log_success "Qubic repository and submodules cloned."
     fi
+    log_success "Qubic repository is up to date."
 
-    # --- Override qubic-cli submodule with the specified fork ---
-    log_milestone "Replacing original qubic-cli with the BANKONPYTHAI fork..."
+    # --- Interactive Choice for qubic-cli Repository ---
+    local cli_repo_url="${QUBIC_CLI_FORK_URL}" # Default to the fork
+    local cli_repo_name="BANKONPYTHAI (Ubuntu Fix)"
+
+    log_info "You have a choice for the qubic-cli component."
+    echo -e "${ORANGE}${ICON_WARN} Use the BANKONPYTHAI fork with Ubuntu fixes? (Recommended)"
+    echo -e "${ORANGE}    (Answering 'n' will use the original Qubic repo instead)"
+    echo -n -e "${ORANGE}    (Auto-selects fork in 5s) [Y/n]: ${NC}"
+    read -t 5 response || true
+    echo
+
+    if [[ "$response" =~ ^[Nn]$ ]]; then
+        cli_repo_url="${QUBIC_CLI_OFFICIAL_URL}"
+        cli_repo_name="Official Qubic"
+        log_info "User selected the ${cli_repo_name} repository for qubic-cli."
+    else
+        log_info "Proceeding with the recommended ${cli_repo_name} fork."
+    fi
+    
+    log_milestone "Cloning the selected qubic-cli from ${cli_repo_name}..."
     rm -rf "${INSTALL_DIR}/qubic-cli"
-    git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone "${QUBIC_CLI_FORK_URL}" "${INSTALL_DIR}/qubic-cli"
-    log_success "Successfully cloned forked qubic-cli."
+    git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone "${cli_repo_url}" "${INSTALL_DIR}/qubic-cli"
+    log_success "Successfully cloned qubic-cli from the ${cli_repo_name} repository."
 }
 
 function setup_virtualbox() {
@@ -123,7 +141,6 @@ function setup_virtualbox() {
     elif [[ "${installed_ver}" != "none" ]]; then
         log_error "An unsupported version of VirtualBox (${installed_ver}) is installed."
         log_error "This script requires version ${VBOX_VERSION}."
-        log_error "Please uninstall the current version and re-run the script."
         exit 1
     else
         log_milestone "Downloading VirtualBox ${VBOX_VERSION} (forcing IPv4)..."
@@ -131,23 +148,16 @@ function setup_virtualbox() {
         local extpack="Oracle_VirtualBox_Extension_Pack-${VBOX_VERSION}.vbox-extpack"
         local download_url="https://download.virtualbox.org/virtualbox/${VBOX_VERSION}"
 
-        wget -4 --progress=bar:force:noscroll -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}" 2>&1
-        wget -4 --progress=bar:force:noscroll -O "/tmp/${extpack}" "${download_url}/${extpack}" 2>&1
+        wget -4 -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}"
+        wget -4 -O "/tmp/${extpack}" "${download_url}/${extpack}"
         log_success "VirtualBox packages downloaded."
 
         log_info "Installing VirtualBox..."
         dpkg -i "/tmp/${vbox_deb}" >/dev/null || apt-get -y --fix-broken install >/dev/null
-        log_success "VirtualBox installed."
-
-        log_info "Installing VirtualBox Extension Pack..."
         VBoxManage extpack install --replace "/tmp/${extpack}" --accept-license="${VBOX_EXTPACK_LICENSE}" >/dev/null
-        log_success "VirtualBox Extension Pack installed."
-
-        log_info "Configuring VirtualBox kernel modules..."
         /sbin/vboxconfig >/dev/null
-        log_success "VirtualBox configured."
-
         rm -f "/tmp/${vbox_deb}" "/tmp/${extpack}"
+        log_success "VirtualBox ${VBOX_VERSION} installed and configured."
     fi
 }
 
@@ -169,7 +179,7 @@ function install_docker_compose() {
 
     if [[ "$perform_install" == true ]]; then
         log_milestone "Installing/Updating Docker Compose (forcing IPv4)..."
-        curl -4 -sL "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        curl -4 -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         chmod +x /usr/local/bin/docker-compose
         log_success "Docker Compose installed/updated."
     fi
@@ -179,27 +189,25 @@ function prepare_qubic_files() {
     log_info "Preparing Qubic file structure..."
     if [ ! -d "qubic_docker" ]; then
         if [ -d "core-docker" ]; then
-            log_info "First run: Renaming 'core-docker' to 'qubic_docker'..."
             mv core-docker qubic_docker
-            log_success "Organized Docker-related files."
         else
-            log_error "'core-docker' submodule not found! Cannot proceed. Try re-cloning."
+            log_error "core-docker submodule not found! Cannot proceed."
             exit 1
         fi
     else
-        log_warn "'qubic_docker' directory already exists. Skipping rename."
+        log_warn "qubic_docker directory already exists. Skipping rename."
     fi
 
     local perform_download=true
     if [ -f "${INSTALL_DIR}/qubic.vhd" ]; then
-        log_warn "File 'qubic.vhd' already exists."
+        log_warn "File qubic.vhd already exists."
         echo -n -e "${ORANGE}${ICON_WARN} Do you want to overwrite it? (Auto-yes in 3s) [y/N]: ${NC}"
         read -t 3 response || true
         echo
 
         if [[ "$response" =~ ^[Nn]$ ]]; then
-            log_success "Skipping download. Using existing 'qubic.vhd'."
             perform_download=false
+            log_success "Skipping download. Using existing qubic.vhd."
         else
             log_info "Proceeding with download and overwrite."
         fi
@@ -208,18 +216,18 @@ function prepare_qubic_files() {
     if [[ "$perform_download" == true ]]; then
         local vhd_zip_path="/tmp/qubic-vde.zip"
         log_milestone "Downloading Qubic VHD image (forcing IPv4)..."
-        wget -4 --progress=bar:force:noscroll -O "${vhd_zip_path}" "${VHD_URL}" 2>&1
+        wget -4 -O "${vhd_zip_path}" "${VHD_URL}"
         log_success "VHD download complete."
 
         log_info "Verifying and extracting VHD..."
         if [ ! -f "${vhd_zip_path}" ]; then
-            log_error "Download failed: ZIP file not found at ${vhd_zip_path}."
+            log_error "Download failed: ZIP file not found."
             exit 1
         fi
-        unzip -o "${vhd_zip_path}" -d "${INSTALL_DIR}"
+        unzip -o "${vhd_zip_path}" -d "${INSTALL_DIR}" >/dev/null
         rm "${vhd_zip_path}"
         if [ ! -f "${INSTALL_DIR}/qubic.vhd" ]; then
-            log_error "Extraction failed: qubic.vhd not found after unzipping."
+            log_error "Extraction failed: qubic.vhd not found."
             exit 1
         fi
         log_success "Extracted qubic.vhd successfully."
@@ -228,7 +236,7 @@ function prepare_qubic_files() {
     log_info "Preparing epoch files for VHD..."
     rm -rf filesForVHD
     mkdir -p filesForVHD
-    unzip -o Ep152.zip -d filesForVHD/
+    unzip -o Ep152.zip -d filesForVHD/ >/dev/null
     log_success "Epoch files (Ep152) prepared."
 }
 
@@ -237,21 +245,41 @@ function build_tools() {
     local bin_dir="${INSTALL_DIR}/bin"
     mkdir -p "${bin_dir}"
     
+    log_info "Configuring and building qubic-cli..."
     pushd "${INSTALL_DIR}/qubic-cli" > /dev/null
-    log_info "Building qubic-cli..."
     mkdir -p build && cd build
-    cmake .. > /dev/null && make > /dev/null
+    
+    if ! cmake ..; then
+        log_error "cmake for qubic-cli failed. Please review the output above."
+        exit 1
+    fi
+
+    if ! make; then
+        log_error "make for qubic-cli failed. Please review the output above."
+        exit 1
+    fi
+    
     cp qubic-cli "${bin_dir}/"
     popd > /dev/null
-    log_success "Built 'qubic-cli'."
+    log_success "Built qubic-cli. Binary located in ${bin_dir}/"
 
+    log_info "Configuring and building qlogging..."
     pushd "${INSTALL_DIR}/qlogging" > /dev/null
-    log_info "Building qlogging..."
     mkdir -p build && cd build
-    cmake .. > /dev/null && make > /dev/null
+
+    if ! cmake ..; then
+        log_error "cmake for qlogging failed. Please review the output above."
+        exit 1
+    fi
+
+    if ! make; then
+        log_error "make for qlogging failed. Please review the output above."
+        exit 1
+    fi
+
     cp qlogging "${bin_dir}/"
     popd > /dev/null
-    log_success "Built 'qlogging'."
+    log_success "Built qlogging. Binary located in ${bin_dir}/"
 }
 
 function print_summary() {
@@ -275,7 +303,7 @@ function print_summary() {
     echo -e "${YELLOW}### ${ICON_ROCKET} NEXT STEPS TO LAUNCH YOUR TESTNET ${ICON_ROCKET} ###${NC}"
     echo -e "${CYAN}  -> Open the VirtualBox application.${NC}"
     echo -e "${CYAN}  -> Choose to create a new Linux Virtual Machine.${NC}"
-    echo -e "${CYAN}  -> When asked for a hard disk, select 'Use an existing virtual hard disk file'.${NC}"
+    echo -e "${CYAN}  -> When asked for a hard disk, select Use an existing virtual hard disk file.${NC}"
     echo -e "${CYAN}  -> Browse to your workspace and select the ${YELLOW}qubic.vhd${CYAN} file.${NC}"
     echo -e "${CYAN}  -> Follow the Qubic documentation to configure RAM, networking, and run your node.${NC}"
     echo
