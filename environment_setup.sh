@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version
+# Qubic Development Kit Installer - Best-Practice Version (Corrected)
 #
 # This script installs the Qubic development environment, including dependencies,
 # VirtualBox, Docker, and builds necessary Qubic tools.
@@ -109,12 +109,12 @@ function setup_virtualbox() {
         log_warn "VirtualBox ${VBOX_VERSION} is already installed. Skipping."
         add_to_summary "VirtualBox ${VBOX_VERSION} was already installed."
         return
-    elif [[ "${installed_ver}" != "none" ]];
+    elif [[ "${installed_ver}" != "none" ]]; then
         log_warn "Found existing VirtualBox version ${installed_ver}. The script will attempt to install version ${VBOX_VERSION}."
         log_warn "If this fails, please uninstall the old version manually and re-run."
     fi
 
-    local vbox_deb="virtualbox-${VBOX_VERSION}_${VBOX_VERSION}-${VBOX_BUILD}~Ubuntu~jammy_amd64.deb"
+    local vbox_deb="virtualbox-${VBOX_VERSION:0:3}_${VBOX_VERSION}-${VBOX_BUILD}~Ubuntu~jammy_amd64.deb"
     local extpack="Oracle_VirtualBox_Extension_Pack-${VBOX_VERSION}.vbox-extpack"
     local download_url="https://download.virtualbox.org/virtualbox/${VBOX_VERSION}"
 
@@ -124,6 +124,7 @@ function setup_virtualbox() {
     log_success "VirtualBox packages downloaded."
 
     log_info "Installing VirtualBox..."
+    # Allow dpkg to fail, then fix with apt
     dpkg -i "/tmp/${vbox_deb}" || apt-get --fix-broken install -y
     log_success "VirtualBox installed."
 
@@ -138,6 +139,7 @@ function setup_virtualbox() {
     rm -f "/tmp/${vbox_deb}" "/tmp/${extpack}"
     add_to_summary "Installed and configured VirtualBox ${VBOX_VERSION} with Extension Pack."
 }
+
 
 function install_docker_compose() {
     log_info "Installing Docker Compose..."
