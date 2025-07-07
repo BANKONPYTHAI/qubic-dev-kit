@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (Corrected v3)
+# Qubic Development Kit Installer - Best-Practice Version (v5)
 #
-# This script installs the Qubic development environment. This version corrects
-# a syntax error in the VirtualBox installation logic.
+# This script installs the Qubic development environment.
+# Changelog:
+# - v5: Added an interactive prompt before running 'apt-get update'.
+# - v4: Corrected VirtualBox installation logic.
 # ==============================================================================
 
 # --- Script Configuration ---
@@ -67,9 +69,21 @@ function cleanup_on_error() {
 }
 
 function install_dependencies() {
-    log_info "Updating package lists..."
-    apt-get update -y >/dev/null
-    log_success "Package lists updated."
+    local response
+    # Ask for permission before updating package lists
+    read -p "$(echo -e ${BLUE}${ICON_INFO} Refresh package lists with 'apt-get update'? (Recommended) [Y/n]: ${NC})" response
+
+    # Default to 'y' if user just presses Enter
+    if [[ -z "$response" || "$response" =~ ^[Yy]$ ]]; then
+        log_info "Updating package lists as requested (errors will be shown)..."
+        apt-get update -y >/dev/null
+        log_success "Package lists updated."
+        add_to_summary "Updated APT package lists."
+    else
+        log_warn "Skipping package list update at user's request."
+        log_warn "Dependency installation may fail if local package lists are stale."
+        add_to_summary "Skipped APT package list update (user choice)."
+    fi
 
     log_info "Installing system dependencies..."
     DEPS=(
@@ -107,7 +121,6 @@ function setup_virtualbox() {
         log_error "Please uninstall the current version and re-run the script."
         exit 1
     else
-        # This block now correctly contains the installation logic.
         log_info "No VirtualBox installation found. Proceeding with new installation."
         
         local vbox_deb="virtualbox-7.1_${VBOX_VERSION}-${VBOX_BUILD}~Ubuntu~jammy_amd64.deb"
