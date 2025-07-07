@@ -1,115 +1,228 @@
 #!/bin/bash
 
-# Check if the script is run as root
-if [ "$(id -u)" -ne 0 ]; then
-    echo "This script must be run as root."
-    exit 1
-fi
+# ==============================================================================
+# Qubic Development Kit Installer - Best-Practice Version
+#
+# This script installs the Qubic development environment, including dependencies,
+# VirtualBox, Docker, and builds necessary Qubic tools.
+#
+# Best Practices Implemented:
+# - Flexible installation path (default: /opt/qubic)
+# - Rich, color-coded logging with icons.
+# - Modular functions for clarity and maintainability.
+# - Robust error handling (set -euo pipefail).
+# - Centralized configuration variables.
+# - Detailed summary report upon completion.
+# ==============================================================================
 
-# Clone the Qubic development kit repository
-git clone --recursive https://github.com/qubic/qubic-dev-kit /root/qubic
+# --- Script Configuration ---
+INSTALL_DIR="/opt/qubic"
+VBOX_VERSION="7.1.4"
+VBOX_BUILD="165100"
+VBOX_EXTPACK_LICENSE="eb31505e56e9b4d0fbca139104da41ac6f6b98f8e78968bdf01b1f3da3c4f9ae"
+DOCKER_COMPOSE_VERSION="v2.26.1"
+QUBIC_REPO_URL="https://github.com/qubic/qubic-dev-kit"
+VHD_URL="https://files.qubic.world/qubic-vde.zip"
 
-# Change to the qubic directory
-cd /root/qubic
+# --- Colors and Icons ---
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+ORANGE='\033[0;33m' # Bitcoin Orange
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Copy necessary scripts to core-docker directory
-cp /root/qubic/scripts/deploy.sh /root/qubic/scripts/docker-compose.yaml /root/qubic/scripts/cleanup.sh /root/qubic/scripts/efi_build.sh /root/qubic/scripts/tree_vhd.sh /root/qubic/core-docker
-cp -r /root/qubic/scripts/letsencrypt core-docker/
+ICON_SUCCESS="✅"
+ICON_ERROR="❌"
+ICON_WARN="⚠️"
+ICON_INFO="🧊"
+ICON_BITCOIN="₿"
 
-# Rename core-docker to qubic_docker
-mv core-docker qubic_docker
+# --- Logging Functions ---
+log_info() { echo -e "${BLUE}${ICON_INFO} $1${NC}"; }
+log_success() { echo -e "${GREEN}${ICON_SUCCESS} $1${NC}"; }
+log_warn() { echo -e "${ORANGE}${ICON_BITCOIN} $1${NC}"; }
+log_error() { echo -e "${RED}${ICON_ERROR} $1${NC}"; }
 
-# Update package list and install required packages
-apt update
-apt install -y freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12 dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree unzip
+# --- Summary Log ---
+SUMMARY_LOG=()
+add_to_summary() { SUMMARY_LOG+=("$1"); }
 
-# Create mount point
-mkdir -p /mnt/qubic
-
-# Download and extract qubic.vhd
-echo "Downloading qubic-vde.zip..."
-wget https://files.qubic.world/qubic-vde.zip -O /tmp/qubic-vde.zip
-if [ $? -ne 0 ]; then
-    echo "Failed to download qubic-vde.zip"
-    exit 1
-fi
-
-echo "Extracting qubic-vde.zip to /root/qubic/..."
-unzip -o /tmp/qubic-vde.zip -d /root/qubic/
-if [ ! -f /root/qubic/qubic.vhd ]; then
-    echo "qubic.vhd not found after extraction. Please check the ZIP file contents."
-    exit 1
-fi
-
-echo "qubic.vhd successfully extracted to /root/qubic/qubic.vhd"
-
-rm /tmp/qubic-vde.zip
-echo "Deleted /tmp/qubic-vde.zip"
-
-# Check if VirtualBox is installed and its version
-DESIRED_VBOX_VERSION="7.1.4"
-VBOX_INSTALLED_VERSION=$(VBoxManage --version 2>/dev/null | cut -d 'r' -f 1)
-
-if [ -n "$VBOX_INSTALLED_VERSION" ]; then
-    if [ "$VBOX_INSTALLED_VERSION" == "$DESIRED_VBOX_VERSION" ]; then
-        echo "VirtualBox version $DESIRED_VBOX_VERSION is already installed. Skipping installation."
-    else
-        echo "VirtualBox version $VBOX_INSTALLED_VERSION is installed, but version $DESIRED_VBOX_VERSION is required."
-        echo "Please uninstall the current version of VirtualBox and rerun this script."
+# --- Helper Functions ---
+check_root() {
+    if [ "$(id -u)" -ne 0 ]; then
+        log_error "This script must be run as root. Please use sudo."
         exit 1
     fi
-else
-    # Download and install VirtualBox
-    wget https://download.virtualbox.org/virtualbox/7.1.4/virtualbox-7.1_7.1.4-165100~Ubuntu~jammy_amd64.deb
-    wget https://download.virtualbox.org/virtualbox/7.1.4/Oracle_VirtualBox_Extension_Pack-7.1.4.vbox-extpack
-    dpkg -i virtualbox-7.1_7.1.4-165100~Ubuntu~jammy_amd64.deb
-    apt --fix-broken install -y
+    log_success "Root privileges confirmed."
+    add_to_summary "Ran script with required root privileges."
+}
 
-    # Install VirtualBox Extension Pack with auto license acceptance
-    VBoxManage extpack install Oracle_VirtualBox_Extension_Pack-7.1.4.vbox-extpack --accept-license=eb31505e56e9b4d0fbca139104da41ac6f6b98f8e78968bdf01b1f3da3c4f9ae
+# --- Main Logic Functions ---
 
-    # Remove VirtualBox kernel modules and reconfigure
-    modprobe -r vboxnetflt vboxnetadp vboxpci vboxdrv
-    /sbin/vboxconfig
-fi
+function setup_environment() {
+    set -euo pipefail
+    trap 'cleanup_on_error' ERR
+    log_info "Creating installation directory: ${INSTALL_DIR}"
+    mkdir -p "${INSTALL_DIR}"
+    cd "${INSTALL_DIR}"
+    add_to_summary "Created installation directory at ${INSTALL_DIR}."
+}
 
-# Install Docker Compose
-curl -L "https://github.com/docker/compose/releases/download/v2.26.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-
-# Remove existing /root/filesForVHD if it exists
-rm -rf /root/filesForVHD
-
-# Create directory and unzip Ep152.zip
-mkdir -p /root/filesForVHD
-echo "Created new /root/filesForVHD"
-
-# Check if Ep152.zip exists
-if [ ! -f /root/qubic/Ep152.zip ]; then
-    echo "Ep152.zip not found in /root/qubic/"
+function cleanup_on_error() {
+    log_error "An error occurred. Installation failed."
+    log_warn "Please check the output above for details."
     exit 1
-fi
+}
 
-# Unzip Ep152.zip into the new directory
-unzip /root/qubic/Ep152.zip -d /root/filesForVHD/
-echo "Unzipped Ep152.zip to /root/filesForVHD/"
+function install_dependencies() {
+    log_info "Updating package lists..."
+    apt-get update -y >/dev/null
+    log_success "Package lists updated."
 
-# Build qubic-cli
-cd /root/qubic/qubic-cli || { echo "Failed to change to qubic-cli directory"; exit 1; }
-mkdir -p build
-cd build
-cmake ..
-make
-cp qubic-cli /root/qubic/qubic_docker
-cp qubic-cli /root/qubic/scripts
+    log_info "Installing system dependencies..."
+    DEPS=(
+        freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12
+        dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree unzip
+    )
+    apt-get install -y "${DEPS[@]}"
+    log_success "System dependencies installed."
+    add_to_summary "Installed required system packages (git, docker, build-essential, etc.)."
+}
 
-# Build qlogging
-cd /root/qubic/qlogging
-mkdir -p build
-cd build
-cmake ..
-make
-cp qlogging /root/qubic/qubic_docker
-cp qlogging /root/qubic/scripts
+function clone_repo() {
+    if [ -d "${INSTALL_DIR}/.git" ]; then
+        log_warn "Qubic repository already exists. Skipping clone."
+    else
+        log_info "Cloning Qubic development kit from GitHub..."
+        git clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
+        log_success "Qubic repository cloned successfully."
+    fi
+    add_to_summary "Cloned Qubic development kit repository."
+}
 
-echo "Script completed successfully."
+function setup_virtualbox() {
+    log_info "Checking VirtualBox status..."
+    local installed_ver
+    installed_ver=$(VBoxManage --version 2>/dev/null | cut -d'r' -f1 || echo "none")
+
+    if [[ "${installed_ver}" == "${VBOX_VERSION}" ]]; then
+        log_warn "VirtualBox ${VBOX_VERSION} is already installed. Skipping."
+        add_to_summary "VirtualBox ${VBOX_VERSION} was already installed."
+        return
+    elif [[ "${installed_ver}" != "none" ]];
+        log_warn "Found existing VirtualBox version ${installed_ver}. The script will attempt to install version ${VBOX_VERSION}."
+        log_warn "If this fails, please uninstall the old version manually and re-run."
+    fi
+
+    local vbox_deb="virtualbox-${VBOX_VERSION}_${VBOX_VERSION}-${VBOX_BUILD}~Ubuntu~jammy_amd64.deb"
+    local extpack="Oracle_VirtualBox_Extension_Pack-${VBOX_VERSION}.vbox-extpack"
+    local download_url="https://download.virtualbox.org/virtualbox/${VBOX_VERSION}"
+
+    log_info "Downloading VirtualBox ${VBOX_VERSION}..."
+    wget -q -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}"
+    wget -q -O "/tmp/${extpack}" "${download_url}/${extpack}"
+    log_success "VirtualBox packages downloaded."
+
+    log_info "Installing VirtualBox..."
+    dpkg -i "/tmp/${vbox_deb}" || apt-get --fix-broken install -y
+    log_success "VirtualBox installed."
+
+    log_info "Installing VirtualBox Extension Pack..."
+    echo "y" | VBoxManage extpack install --replace "/tmp/${extpack}" --accept-license="${VBOX_EXTPACK_LICENSE}"
+    log_success "VirtualBox Extension Pack installed."
+
+    log_info "Configuring VirtualBox kernel modules..."
+    /sbin/vboxconfig
+    log_success "VirtualBox configured."
+
+    rm -f "/tmp/${vbox_deb}" "/tmp/${extpack}"
+    add_to_summary "Installed and configured VirtualBox ${VBOX_VERSION} with Extension Pack."
+}
+
+function install_docker_compose() {
+    log_info "Installing Docker Compose..."
+    curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+    log_success "Docker Compose installed."
+    add_to_summary "Installed Docker Compose ${DOCKER_COMPOSE_VERSION}."
+}
+
+function prepare_qubic_files() {
+    log_info "Preparing Qubic file structure..."
+    # Create and organize the docker directory
+    cp scripts/deploy.sh scripts/docker-compose.yaml scripts/cleanup.sh scripts/efi_build.sh scripts/tree_vhd.sh core-docker/
+    cp -r scripts/letsencrypt core-docker/
+    mv core-docker qubic_docker
+    log_success "Docker scripts organized into 'qubic_docker'."
+    add_to_summary "Organized Docker-related files."
+
+    # Download and extract VHD
+    log_info "Downloading Qubic VHD image..."
+    wget -q -O "/tmp/qubic-vde.zip" "${VHD_URL}"
+    log_success "VHD download complete."
+
+    log_info "Extracting VHD..."
+    unzip -o "/tmp/qubic-vde.zip" -d "${INSTALL_DIR}"
+    rm "/tmp/qubic-vde.zip"
+    log_success "Extracted qubic.vhd."
+    add_to_summary "Downloaded and extracted the Qubic VHD image."
+
+    # Prepare files for VHD
+    log_info "Preparing epoch files for VHD..."
+    rm -rf filesForVHD
+    mkdir -p filesForVHD
+    unzip -o Ep152.zip -d filesForVHD/
+    log_success "Epoch files (Ep152) prepared."
+    add_to_summary "Prepared VHD epoch files."
+}
+
+function build_tools() {
+    log_info "Building Qubic tools (qubic-cli, qlogging)..."
+    
+    # Build qubic-cli
+    pushd "${INSTALL_DIR}/qubic-cli" > /dev/null
+    mkdir -p build && cd build
+    cmake .. > /dev/null && make > /dev/null
+    cp qubic-cli "${INSTALL_DIR}/qubic_docker/"
+    cp qubic-cli "${INSTALL_DIR}/scripts/"
+    popd > /dev/null
+    log_success "Built 'qubic-cli' and copied to relevant directories."
+
+    # Build qlogging
+    pushd "${INSTALL_DIR}/qlogging" > /dev/null
+    mkdir -p build && cd build
+    cmake .. > /dev/null && make > /dev/null
+    cp qlogging "${INSTALL_DIR}/qubic_docker/"
+    cp qlogging "${INSTALL_DIR}/scripts/"
+    popd > /dev/null
+    log_success "Built 'qlogging' and copied to relevant directories."
+    add_to_summary "Compiled and deployed 'qubic-cli' and 'qlogging' tools."
+}
+
+function print_summary() {
+    echo -e "\n\n${GREEN}===================================================${NC}"
+    echo -e "${GREEN}${ICON_SUCCESS}      Qubic Dev Kit Installation Complete      ${NC}"
+    echo -e "${GREEN}===================================================${NC}\n"
+    echo -e "${BLUE}${ICON_INFO} Summary of actions performed:${NC}"
+    for item in "${SUMMARY_LOG[@]}"; do
+        echo -e "  ${GREEN}▪${NC} ${item}"
+    done
+    echo -e "\n${ICON_INFO} The Qubic environment is installed in: ${ORANGE}${INSTALL_DIR}${NC}"
+    echo -e "${ICON_INFO} You can now proceed with running the Qubic services."
+    echo -e "\n${GREEN}===================================================${NC}\n"
+}
+
+# --- Main Execution ---
+main() {
+    check_root
+    setup_environment
+    install_dependencies
+    clone_repo
+    setup_virtualbox
+    install_docker_compose
+    prepare_qubic_files
+    build_tools
+    print_summary
+}
+
+main "$@"
