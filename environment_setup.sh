@@ -1,10 +1,13 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (v5)
+# Qubic Development Kit Installer - Best-Practice Version (v6)
 #
 # This script installs the Qubic development environment.
 # Changelog:
+# - v6: Fixed 'read' syntax error for better shell compatibility.
+#       Added Solana Yellow for highlights.
+#       Confirmed Bitcoin Orange for warnings.
 # - v5: Added an interactive prompt before running 'apt-get update'.
 # - v4: Corrected VirtualBox installation logic.
 # ==============================================================================
@@ -21,15 +24,17 @@ VHD_URL="https://files.qubic.world/qubic-vde.zip"
 # --- Colors and Icons ---
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-ORANGE='\033[0;33m' # Bitcoin Orange
+ORANGE='\033[0;33m'          # Bitcoin Orange
+SOLANA_YELLOW='\033[1;33m'   # Solana Yellow
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 ICON_SUCCESS="✅"
 ICON_ERROR="❌"
-ICON_WARN="⚠️"
+ICON_WARN="⚠️" # Kept for generic warnings if needed
 ICON_INFO="🧊"
 ICON_BITCOIN="₿"
+ICON_SOLANA="☀️"
 
 # --- Logging Functions ---
 log_info() { echo -e "${BLUE}${ICON_INFO} $1${NC}"; }
@@ -70,8 +75,9 @@ function cleanup_on_error() {
 
 function install_dependencies() {
     local response
-    # Ask for permission before updating package lists
-    read -p "$(echo -e ${BLUE}${ICON_INFO} Refresh package lists with 'apt-get update'? (Recommended) [Y/n]: ${NC})" response
+    # Print the prompt without a newline, then read the input. This is more portable.
+    echo -n -e "${BLUE}${ICON_INFO} Refresh package lists with 'apt-get update'? (Recommended) [Y/n]: ${NC}"
+    read response
 
     # Default to 'y' if user just presses Enter
     if [[ -z "$response" || "$response" =~ ^[Yy]$ ]]; then
@@ -212,7 +218,7 @@ function print_summary() {
     for item in "${SUMMARY_LOG[@]}"; do
         echo -e "  ${GREEN}▪${NC} ${item}"
     done
-    echo -e "\n${ICON_INFO} The Qubic environment is installed in: ${ORANGE}${INSTALL_DIR}${NC}"
+    echo -e "\n${ICON_SOLANA} The Qubic environment is installed in: ${SOLANA_YELLOW}${INSTALL_DIR}${NC}"
     echo -e "${ICON_INFO} You can now proceed with running the Qubic services."
     echo -e "\n${GREEN}===================================================${NC}\n"
 }
