@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (v15)
+# Qubic Development Kit Installer - Best-Practice Version (v18)
 #
 # This script installs the Qubic development environment.
 # Changelog:
-# - v15: Integrated a more detailed final summary with Next Steps.
-#        Created a clean '/bin' directory for compiled tools to match summary.
-# - v14: Ensured all warnings and prompts use the 📉 icon.
+# - v18: Added key developer resource links to the final summary.
+# - v17: Refined the Qubic icon to "▀█" for better logo accuracy.
+# - v16: Replaced placeholder icon with the official Qubic logo icon (‖).
 # ==============================================================================
 
 # --- Script Configuration ---
@@ -23,7 +23,7 @@ VHD_URL="https://files.qubic.world/qubic-vde.zip"
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 ORANGE='\033[0;33m'
-YELLOW='\033[1;33m' # Consistent name for Solana Yellow
+YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
@@ -32,8 +32,7 @@ ICON_SUCCESS="✅"
 ICON_ERROR="❌"
 ICON_WARN="📉"
 ICON_INFO="🧊"
-ICON_BITCOIN="₿"
-ICON_SOLANA="☀️"
+ICON_QUBIC="▀█"
 ICON_ROCKET="🚀"
 ICON_DIAMOND="🔹"
 ICON_CHECK="✔️"
@@ -43,11 +42,7 @@ log_info() { echo -e "${BLUE}${ICON_INFO} $1${NC}"; }
 log_success() { echo -e "${GREEN}${ICON_SUCCESS} $1${NC}"; }
 log_warn() { echo -e "${ORANGE}${ICON_WARN} $1${NC}"; }
 log_error() { echo -e "${RED}${ICON_ERROR} $1${NC}"; }
-log_milestone() { echo -e "${ORANGE}${ICON_BITCOIN} $1${NC}"; }
-
-# --- Summary Log (No longer needed for final output, but kept for process) ---
-SUMMARY_LOG=()
-add_to_summary() { SUMMARY_LOG+=("$1"); }
+log_milestone() { echo -e "${ORANGE}${ICON_QUBIC} $1${NC}"; }
 
 # --- Helper Functions ---
 check_root() {
@@ -276,6 +271,13 @@ function print_summary() {
     echo -e "${CYAN}  -> When asked for a hard disk, select 'Use an existing virtual hard disk file'.${NC}"
     echo -e "${CYAN}  -> Browse to your workspace and select the ${YELLOW}qubic.vhd${CYAN} file.${NC}"
     echo -e "${CYAN}  -> Follow the Qubic documentation to configure RAM, networking, and run your node.${NC}"
+    echo
+
+    echo -e "${ICON_DIAMOND} ${GREEN}Developer Resources:${NC}"
+    echo -e "${CYAN}  -> Qubic Main Org:   https://github.com/qubic${NC}"
+    echo -e "${CYAN}  -> Documentation:    https://github.com/qubic/docs${NC}"
+    echo -e "${CYAN}  -> Docker Repo:      https://github.com/qubic/core-docker${NC}"
+    echo -e "${CYAN}  -> Logging Tool Repo: https://github.com/qubic/qlogging${NC}"
     echo
 }
 
