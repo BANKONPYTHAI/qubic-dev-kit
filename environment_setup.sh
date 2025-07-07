@@ -1,15 +1,13 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (v6)
+# Qubic Development Kit Installer - Best-Practice Version (v7)
 #
 # This script installs the Qubic development environment.
 # Changelog:
-# - v6: Fixed 'read' syntax error for better shell compatibility.
-#       Added Solana Yellow for highlights.
-#       Confirmed Bitcoin Orange for warnings.
-# - v5: Added an interactive prompt before running 'apt-get update'.
-# - v4: Corrected VirtualBox installation logic.
+# - v7: Added live progress bar for downloads and enhanced diagnostic checks.
+#       Added wget to dependency list.
+# - v6: Fixed 'read' syntax error, added Solana Yellow, confirmed Bitcoin Orange.
 # ==============================================================================
 
 # --- Script Configuration ---
@@ -31,7 +29,7 @@ NC='\033[0m' # No Color
 
 ICON_SUCCESS="✅"
 ICON_ERROR="❌"
-ICON_WARN="⚠️" # Kept for generic warnings if needed
+ICON_WARN="⚠️"
 ICON_INFO="🧊"
 ICON_BITCOIN="₿"
 ICON_SOLANA="☀️"
@@ -75,11 +73,9 @@ function cleanup_on_error() {
 
 function install_dependencies() {
     local response
-    # Print the prompt without a newline, then read the input. This is more portable.
     echo -n -e "${BLUE}${ICON_INFO} Refresh package lists with 'apt-get update'? (Recommended) [Y/n]: ${NC}"
     read response
 
-    # Default to 'y' if user just presses Enter
     if [[ -z "$response" || "$response" =~ ^[Yy]$ ]]; then
         log_info "Updating package lists as requested (errors will be shown)..."
         apt-get update -y >/dev/null
@@ -94,11 +90,11 @@ function install_dependencies() {
     log_info "Installing system dependencies..."
     DEPS=(
         freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12
-        dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree unzip
+        dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree unzip wget
     )
     apt-get install -y "${DEPS[@]}"
     log_success "System dependencies installed."
-    add_to_summary "Installed required system packages (git, docker, build-essential, etc.)."
+    add_to_summary "Installed required system packages (git, docker, wget, etc.)."
 }
 
 function clone_repo() {
@@ -128,14 +124,13 @@ function setup_virtualbox() {
         exit 1
     else
         log_info "No VirtualBox installation found. Proceeding with new installation."
-        
         local vbox_deb="virtualbox-7.1_${VBOX_VERSION}-${VBOX_BUILD}~Ubuntu~jammy_amd64.deb"
         local extpack="Oracle_VirtualBox_Extension_Pack-${VBOX_VERSION}.vbox-extpack"
         local download_url="https://download.virtualbox.org/virtualbox/${VBOX_VERSION}"
 
         log_info "Downloading VirtualBox ${VBOX_VERSION}..."
-        wget -q -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}"
-        wget -q -O "/tmp/${extpack}" "${download_url}/${extpack}"
+        wget --progress=bar:force:noscroll -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}" 2>&1
+        wget --progress=bar:force:noscroll -O "/tmp/${extpack}" "${download_url}/${extpack}" 2>&1
         log_success "VirtualBox packages downloaded."
 
         log_info "Installing VirtualBox..."
@@ -171,14 +166,24 @@ function prepare_qubic_files() {
     log_success "Docker scripts organized into 'qubic_docker'."
     add_to_summary "Organized Docker-related files."
 
-    log_info "Downloading Qubic VHD image..."
-    wget -q -O "/tmp/qubic-vde.zip" "${VHD_URL}"
+    local vhd_zip_path="/tmp/qubic-vde.zip"
+    log_info "Downloading Qubic VHD image (approx. 20MB)..."
+    wget --progress=bar:force:noscroll -O "${vhd_zip_path}" "${VHD_URL}" 2>&1
     log_success "VHD download complete."
 
-    log_info "Extracting VHD..."
-    unzip -o "/tmp/qubic-vde.zip" -d "${INSTALL_DIR}"
-    rm "/tmp/qubic-vde.zip"
-    log_success "Extracted qubic.vhd."
+    log_info "Verifying and extracting VHD..."
+    if [ ! -f "${vhd_zip_path}" ]; then
+        log_error "Download failed: ZIP file not found at ${vhd_zip_path}."
+        exit 1
+    fi
+    unzip -o "${vhd_zip_path}" -d "${INSTALL_DIR}"
+    rm "${vhd_zip_path}"
+    if [ ! -f "${INSTALL_DIR}/qubic.vhd" ]; then
+        log_error "Extraction failed: qubic.vhd not found after unzipping."
+        log_warn "The downloaded ZIP file may be corrupt or have unexpected contents."
+        exit 1
+    fi
+    log_success "Extracted qubic.vhd successfully."
     add_to_summary "Downloaded and extracted the Qubic VHD image."
 
     log_info "Preparing epoch files for VHD..."
