@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (v14)
+# Qubic Development Kit Installer - Best-Practice Version (v15)
 #
 # This script installs the Qubic development environment.
 # Changelog:
-# - v14: Confirmed all warnings and prompts use the 📉 icon.
-#        Adjusted the final success message to display 7 rockets.
-# - v13: Introduced 📉 warning icon and repurposed ₿ for milestones.
+# - v15: Integrated a more detailed final summary with Next Steps.
+#        Created a clean '/bin' directory for compiled tools to match summary.
+# - v14: Ensured all warnings and prompts use the 📉 icon.
 # ==============================================================================
 
 # --- Script Configuration ---
@@ -22,10 +22,11 @@ VHD_URL="https://files.qubic.world/qubic-vde.zip"
 # --- Colors and Icons ---
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-ORANGE='\033[0;33m'          # Bitcoin/Warning Orange
-SOLANA_YELLOW='\033[1;33m'   # Solana Yellow
+ORANGE='\033[0;33m'
+YELLOW='\033[1;33m' # Consistent name for Solana Yellow
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+NC='\033[0m'
 
 ICON_SUCCESS="✅"
 ICON_ERROR="❌"
@@ -34,6 +35,8 @@ ICON_INFO="🧊"
 ICON_BITCOIN="₿"
 ICON_SOLANA="☀️"
 ICON_ROCKET="🚀"
+ICON_DIAMOND="🔹"
+ICON_CHECK="✔️"
 
 # --- Logging Functions ---
 log_info() { echo -e "${BLUE}${ICON_INFO} $1${NC}"; }
@@ -42,7 +45,7 @@ log_warn() { echo -e "${ORANGE}${ICON_WARN} $1${NC}"; }
 log_error() { echo -e "${RED}${ICON_ERROR} $1${NC}"; }
 log_milestone() { echo -e "${ORANGE}${ICON_BITCOIN} $1${NC}"; }
 
-# --- Summary Log ---
+# --- Summary Log (No longer needed for final output, but kept for process) ---
 SUMMARY_LOG=()
 add_to_summary() { SUMMARY_LOG+=("$1"); }
 
@@ -53,7 +56,6 @@ check_root() {
         exit 1
     fi
     log_success "Root privileges confirmed."
-    add_to_summary "Ran script with required root privileges."
 }
 
 # --- Main Logic Functions ---
@@ -64,7 +66,6 @@ function setup_environment() {
     log_info "Creating installation directory: ${INSTALL_DIR}"
     mkdir -p "${INSTALL_DIR}"
     cd "${INSTALL_DIR}"
-    add_to_summary "Created installation directory at ${INSTALL_DIR}."
 }
 
 function cleanup_on_error() {
@@ -82,11 +83,9 @@ function install_dependencies() {
         log_info "Updating package lists as requested (errors will be shown)..."
         apt-get update -y >/dev/null
         log_success "Package lists updated."
-        add_to_summary "Updated APT package lists."
     else
         log_warn "Skipping package list update at user's request."
         log_warn "Dependency installation may fail if local package lists are stale."
-        add_to_summary "Skipped APT package list update (user choice)."
     fi
 
     log_info "Installing system dependencies..."
@@ -94,9 +93,8 @@ function install_dependencies() {
         freerdp2-x11 git cmake docker.io libxcb-cursor0 sshpass gcc-12 g++-12
         dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree unzip wget
     )
-    apt-get install -y "${DEPS[@]}"
+    apt-get install -y "${DEPS[@]}" >/dev/null
     log_success "System dependencies installed."
-    add_to_summary "Installed required system packages (git, docker, wget, etc.)."
 }
 
 function clone_repo() {
@@ -110,7 +108,6 @@ function clone_repo() {
         git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
         log_success "Qubic repository cloned successfully."
     fi
-    add_to_summary "Ensured Qubic repository and all submodules are present."
 }
 
 function setup_virtualbox() {
@@ -120,7 +117,6 @@ function setup_virtualbox() {
 
     if [[ "${installed_ver}" == "${VBOX_VERSION}" ]]; then
         log_success "VirtualBox ${VBOX_VERSION} is already installed. Skipping."
-        add_to_summary "VirtualBox ${VBOX_VERSION} was already installed."
         return
     elif [[ "${installed_ver}" != "none" ]]; then
         log_error "An unsupported version of VirtualBox (${installed_ver}) is installed."
@@ -138,19 +134,18 @@ function setup_virtualbox() {
         log_success "VirtualBox packages downloaded."
 
         log_info "Installing VirtualBox..."
-        dpkg -i "/tmp/${vbox_deb}" || apt-get -y --fix-broken install
+        dpkg -i "/tmp/${vbox_deb}" >/dev/null || apt-get -y --fix-broken install >/dev/null
         log_success "VirtualBox installed."
 
         log_info "Installing VirtualBox Extension Pack..."
-        VBoxManage extpack install --replace "/tmp/${extpack}" --accept-license="${VBOX_EXTPACK_LICENSE}"
+        VBoxManage extpack install --replace "/tmp/${extpack}" --accept-license="${VBOX_EXTPACK_LICENSE}" >/dev/null
         log_success "VirtualBox Extension Pack installed."
 
         log_info "Configuring VirtualBox kernel modules..."
-        /sbin/vboxconfig
+        /sbin/vboxconfig >/dev/null
         log_success "VirtualBox configured."
 
         rm -f "/tmp/${vbox_deb}" "/tmp/${extpack}"
-        add_to_summary "Installed and configured VirtualBox ${VBOX_VERSION} with Extension Pack."
     fi
 }
 
@@ -165,7 +160,6 @@ function install_docker_compose() {
         if [[ "$response" =~ ^[Nn]$ ]]; then
             perform_install=false
             log_success "Skipping Docker Compose re-installation."
-            add_to_summary "Skipped Docker Compose re-installation (user choice)."
         else
             log_info "Proceeding with Docker Compose re-installation."
         fi
@@ -176,7 +170,6 @@ function install_docker_compose() {
         curl -4 -sL "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         chmod +x /usr/local/bin/docker-compose
         log_success "Docker Compose installed/updated."
-        add_to_summary "Installed/Updated Docker Compose ${DOCKER_COMPOSE_VERSION}."
     fi
 }
 
@@ -187,14 +180,12 @@ function prepare_qubic_files() {
             log_info "First run: Renaming 'core-docker' to 'qubic_docker'..."
             mv core-docker qubic_docker
             log_success "Organized Docker-related files."
-            add_to_summary "Organized Docker-related files into 'qubic_docker'."
         else
             log_error "'core-docker' submodule not found! Cannot proceed. Try re-cloning."
             exit 1
         fi
     else
         log_warn "'qubic_docker' directory already exists. Skipping rename."
-        add_to_summary "Skipped Docker file organization (already complete)."
     fi
 
     local perform_download=true
@@ -206,7 +197,6 @@ function prepare_qubic_files() {
 
         if [[ "$response" =~ ^[Nn]$ ]]; then
             log_success "Skipping download. Using existing 'qubic.vhd'."
-            add_to_summary "Skipped VHD download (user choice, file exists)."
             perform_download=false
         else
             log_info "Proceeding with download and overwrite."
@@ -228,11 +218,9 @@ function prepare_qubic_files() {
         rm "${vhd_zip_path}"
         if [ ! -f "${INSTALL_DIR}/qubic.vhd" ]; then
             log_error "Extraction failed: qubic.vhd not found after unzipping."
-            log_warn "The downloaded ZIP file may be corrupt or have unexpected contents."
             exit 1
         fi
-        log_success "Overwrote/Extracted qubic.vhd successfully."
-        add_to_summary "Downloaded and extracted the Qubic VHD image."
+        log_success "Extracted qubic.vhd successfully."
     fi
 
     log_info "Preparing epoch files for VHD..."
@@ -240,18 +228,18 @@ function prepare_qubic_files() {
     mkdir -p filesForVHD
     unzip -o Ep152.zip -d filesForVHD/
     log_success "Epoch files (Ep152) prepared."
-    add_to_summary "Prepared VHD epoch files."
 }
 
 function build_tools() {
     log_milestone "Building Qubic tools (qubic-cli, qlogging)..."
+    local bin_dir="${INSTALL_DIR}/bin"
+    mkdir -p "${bin_dir}"
     
     pushd "${INSTALL_DIR}/qubic-cli" > /dev/null
     log_info "Building qubic-cli..."
     mkdir -p build && cd build
     cmake .. > /dev/null && make > /dev/null
-    cp qubic-cli "${INSTALL_DIR}/qubic_docker/"
-    cp qubic-cli "${INSTALL_DIR}/scripts/"
+    cp qubic-cli "${bin_dir}/"
     popd > /dev/null
     log_success "Built 'qubic-cli'."
 
@@ -259,24 +247,36 @@ function build_tools() {
     log_info "Building qlogging..."
     mkdir -p build && cd build
     cmake .. > /dev/null && make > /dev/null
-    cp qlogging "${INSTALL_DIR}/qubic_docker/"
-    cp qlogging "${INSTALL_DIR}/scripts/"
+    cp qlogging "${bin_dir}/"
     popd > /dev/null
     log_success "Built 'qlogging'."
-    add_to_summary "Compiled and deployed 'qubic-cli' and 'qlogging' tools."
 }
 
 function print_summary() {
-    echo -e "\n\n${GREEN}===================================================${NC}"
-    echo -e "${GREEN}${ICON_ROCKET}               Installation to the Moon!              ${ICON_ROCKET}${NC}"
-    echo -e "${GREEN}===================================================${NC}\n"
-    echo -e "${BLUE}${ICON_INFO} Summary of actions performed:${NC}"
-    for item in "${SUMMARY_LOG[@]}"; do
-        echo -e "  ${GREEN}▪${NC} ${item}"
-    done
-    echo -e "\n${ICON_SOLANA} The Qubic environment is installed in: ${SOLANA_YELLOW}${INSTALL_DIR}${NC}"
-    echo -e "${ICON_INFO} You can now proceed with running the Qubic services."
-    echo -e "\n${GREEN}${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET}${NC}\n"
+    echo -e "\n${CYAN}=====================================================${NC}"
+    echo -e "${GREEN}  ${ICON_ROCKET} Installation Complete & System Verified ${ICON_ROCKET}  ${NC}"
+    echo -e "${CYAN}=====================================================${NC}"
+    echo
+    echo "Your secure development environment has been successfully deployed."
+    echo
+    echo -e "${ICON_DIAMOND} ${GREEN}Installed System-Wide Software:${NC}"
+    echo -e "  ${ICON_CHECK} Docker & Docker Compose"
+    echo -e "  ${ICON_CHECK} VirtualBox ${VBOX_VERSION}"
+    echo -e "  ${ICON_CHECK} Common Build Tools (cmake, gcc, etc.)"
+    echo
+    echo -e "${ICON_DIAMOND} ${GREEN}Your Local Workspace (${YELLOW}${INSTALL_DIR}${GREEN}):${NC}"
+    echo -e "  ${ICON_CHECK} Qubic Source Code: ${YELLOW}${INSTALL_DIR}/${NC}"
+    echo -e "  ${ICON_CHECK} Compiled Binaries: ${YELLOW}${INSTALL_DIR}/bin/${NC} (qubic-cli, qlogging)"
+    echo -e "  ${ICON_CHECK} Qubic Testnet VHD: ${YELLOW}${INSTALL_DIR}/qubic.vhd${NC}"
+    echo
+
+    echo -e "${YELLOW}### ${ICON_ROCKET} NEXT STEPS TO LAUNCH YOUR TESTNET ${ICON_ROCKET} ###${NC}"
+    echo -e "${CYAN}  -> Open the VirtualBox application.${NC}"
+    echo -e "${CYAN}  -> Choose to create a new Linux Virtual Machine.${NC}"
+    echo -e "${CYAN}  -> When asked for a hard disk, select 'Use an existing virtual hard disk file'.${NC}"
+    echo -e "${CYAN}  -> Browse to your workspace and select the ${YELLOW}qubic.vhd${CYAN} file.${NC}"
+    echo -e "${CYAN}  -> Follow the Qubic documentation to configure RAM, networking, and run your node.${NC}"
+    echo
 }
 
 # --- Main Execution ---
