@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (v8)
+# Qubic Development Kit Installer - Best-Practice Version (v14)
 #
 # This script installs the Qubic development environment.
 # Changelog:
-# - v8: Made script idempotent by ensuring submodules are initialized on re-runs.
-# - v7: Added live progress bar for downloads and enhanced diagnostic checks.
+# - v14: Adjusted the final success message to display 7 rockets.
+# - v13: Introduced new 📉 warning icon and repurposed ₿ for milestones.
 # ==============================================================================
 
 # --- Script Configuration ---
@@ -21,23 +21,25 @@ VHD_URL="https://files.qubic.world/qubic-vde.zip"
 # --- Colors and Icons ---
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-ORANGE='\033[0;33m'          # Bitcoin Orange
+ORANGE='\033[0;33m'          # Bitcoin/Warning Orange
 SOLANA_YELLOW='\033[1;33m'   # Solana Yellow
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 ICON_SUCCESS="✅"
 ICON_ERROR="❌"
-ICON_WARN="⚠️"
+ICON_WARN="📉"
 ICON_INFO="🧊"
 ICON_BITCOIN="₿"
 ICON_SOLANA="☀️"
+ICON_ROCKET="🚀"
 
 # --- Logging Functions ---
 log_info() { echo -e "${BLUE}${ICON_INFO} $1${NC}"; }
 log_success() { echo -e "${GREEN}${ICON_SUCCESS} $1${NC}"; }
-log_warn() { echo -e "${ORANGE}${ICON_BITCOIN} $1${NC}"; }
+log_warn() { echo -e "${ORANGE}${ICON_WARN} $1${NC}"; }
 log_error() { echo -e "${RED}${ICON_ERROR} $1${NC}"; }
+log_milestone() { echo -e "${ORANGE}${ICON_BITCOIN} $1${NC}"; }
 
 # --- Summary Log ---
 SUMMARY_LOG=()
@@ -100,13 +102,11 @@ function clone_repo() {
     if [ -d "${INSTALL_DIR}/.git" ]; then
         log_warn "Qubic repository already exists."
         log_info "Verifying and initializing submodules to ensure they are present..."
-        # This command is idempotent. It will initialize missing submodules and
-        # ensure existing ones are on the correct commit.
         git submodule update --init --recursive
         log_success "Submodules are up to date."
     else
         log_info "Cloning Qubic development kit and all submodules..."
-        git clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
+        git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
         log_success "Qubic repository cloned successfully."
     fi
     add_to_summary "Ensured Qubic repository and all submodules are present."
@@ -127,14 +127,13 @@ function setup_virtualbox() {
         log_error "Please uninstall the current version and re-run the script."
         exit 1
     else
-        log_info "No VirtualBox installation found. Proceeding with new installation."
+        log_milestone "Downloading VirtualBox ${VBOX_VERSION} (forcing IPv4)..."
         local vbox_deb="virtualbox-7.1_${VBOX_VERSION}-${VBOX_BUILD}~Ubuntu~jammy_amd64.deb"
         local extpack="Oracle_VirtualBox_Extension_Pack-${VBOX_VERSION}.vbox-extpack"
         local download_url="https://download.virtualbox.org/virtualbox/${VBOX_VERSION}"
 
-        log_info "Downloading VirtualBox ${VBOX_VERSION}..."
-        wget --progress=bar:force:noscroll -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}" 2>&1
-        wget --progress=bar:force:noscroll -O "/tmp/${extpack}" "${download_url}/${extpack}" 2>&1
+        wget -4 --progress=bar:force:noscroll -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}" 2>&1
+        wget -4 --progress=bar:force:noscroll -O "/tmp/${extpack}" "${download_url}/${extpack}" 2>&1
         log_success "VirtualBox packages downloaded."
 
         log_info "Installing VirtualBox..."
@@ -155,40 +154,85 @@ function setup_virtualbox() {
 }
 
 function install_docker_compose() {
-    log_info "Installing Docker Compose..."
-    curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
-    log_success "Docker Compose installed."
-    add_to_summary "Installed Docker Compose ${DOCKER_COMPOSE_VERSION}."
+    local perform_install=true
+    if command -v docker-compose &> /dev/null; then
+        log_warn "Docker Compose is already installed."
+        echo -n -e "${ORANGE}${ICON_WARN} Do you want to re-install/update it? (Auto-yes in 3s) [y/N]: ${NC}"
+        read -t 3 response || true
+        echo
+
+        if [[ "$response" =~ ^[Nn]$ ]]; then
+            perform_install=false
+            log_success "Skipping Docker Compose re-installation."
+            add_to_summary "Skipped Docker Compose re-installation (user choice)."
+        else
+            log_info "Proceeding with Docker Compose re-installation."
+        fi
+    fi
+
+    if [[ "$perform_install" == true ]]; then
+        log_milestone "Installing/Updating Docker Compose (forcing IPv4)..."
+        curl -4 -sL "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+        log_success "Docker Compose installed/updated."
+        add_to_summary "Installed/Updated Docker Compose ${DOCKER_COMPOSE_VERSION}."
+    fi
 }
 
 function prepare_qubic_files() {
     log_info "Preparing Qubic file structure..."
-    cp scripts/deploy.sh scripts/docker-compose.yaml scripts/cleanup.sh scripts/efi_build.sh scripts/tree_vhd.sh core-docker/
-    cp -r scripts/letsencrypt core-docker/
-    mv core-docker qubic_docker
-    log_success "Docker scripts organized into 'qubic_docker'."
-    add_to_summary "Organized Docker-related files."
-
-    local vhd_zip_path="/tmp/qubic-vde.zip"
-    log_info "Downloading Qubic VHD image (approx. 20MB)..."
-    wget --progress=bar:force:noscroll -O "${vhd_zip_path}" "${VHD_URL}" 2>&1
-    log_success "VHD download complete."
-
-    log_info "Verifying and extracting VHD..."
-    if [ ! -f "${vhd_zip_path}" ]; then
-        log_error "Download failed: ZIP file not found at ${vhd_zip_path}."
-        exit 1
+    if [ ! -d "qubic_docker" ]; then
+        if [ -d "core-docker" ]; then
+            log_info "First run: Renaming 'core-docker' to 'qubic_docker'..."
+            mv core-docker qubic_docker
+            log_success "Organized Docker-related files."
+            add_to_summary "Organized Docker-related files into 'qubic_docker'."
+        else
+            log_error "'core-docker' submodule not found! Cannot proceed. Try re-cloning."
+            exit 1
+        fi
+    else
+        log_warn "'qubic_docker' directory already exists. Skipping rename."
+        add_to_summary "Skipped Docker file organization (already complete)."
     fi
-    unzip -o "${vhd_zip_path}" -d "${INSTALL_DIR}"
-    rm "${vhd_zip_path}"
-    if [ ! -f "${INSTALL_DIR}/qubic.vhd" ]; then
-        log_error "Extraction failed: qubic.vhd not found after unzipping."
-        log_warn "The downloaded ZIP file may be corrupt or have unexpected contents."
-        exit 1
+
+    local perform_download=true
+    if [ -f "${INSTALL_DIR}/qubic.vhd" ]; then
+        log_warn "File 'qubic.vhd' already exists."
+        echo -n -e "${ORANGE}${ICON_WARN} Do you want to overwrite it? (Auto-yes in 3s) [y/N]: ${NC}"
+        read -t 3 response || true
+        echo
+
+        if [[ "$response" =~ ^[Nn]$ ]]; then
+            log_success "Skipping download. Using existing 'qubic.vhd'."
+            add_to_summary "Skipped VHD download (user choice, file exists)."
+            perform_download=false
+        else
+            log_info "Proceeding with download and overwrite."
+        fi
     fi
-    log_success "Extracted qubic.vhd successfully."
-    add_to_summary "Downloaded and extracted the Qubic VHD image."
+
+    if [[ "$perform_download" == true ]]; then
+        local vhd_zip_path="/tmp/qubic-vde.zip"
+        log_milestone "Downloading Qubic VHD image (forcing IPv4)..."
+        wget -4 --progress=bar:force:noscroll -O "${vhd_zip_path}" "${VHD_URL}" 2>&1
+        log_success "VHD download complete."
+
+        log_info "Verifying and extracting VHD..."
+        if [ ! -f "${vhd_zip_path}" ]; then
+            log_error "Download failed: ZIP file not found at ${vhd_zip_path}."
+            exit 1
+        fi
+        unzip -o "${vhd_zip_path}" -d "${INSTALL_DIR}"
+        rm "${vhd_zip_path}"
+        if [ ! -f "${INSTALL_DIR}/qubic.vhd" ]; then
+            log_error "Extraction failed: qubic.vhd not found after unzipping."
+            log_warn "The downloaded ZIP file may be corrupt or have unexpected contents."
+            exit 1
+        fi
+        log_success "Overwrote/Extracted qubic.vhd successfully."
+        add_to_summary "Downloaded and extracted the Qubic VHD image."
+    fi
 
     log_info "Preparing epoch files for VHD..."
     rm -rf filesForVHD
@@ -199,29 +243,31 @@ function prepare_qubic_files() {
 }
 
 function build_tools() {
-    log_info "Building Qubic tools (qubic-cli, qlogging)..."
+    log_milestone "Building Qubic tools (qubic-cli, qlogging)..."
     
     pushd "${INSTALL_DIR}/qubic-cli" > /dev/null
+    log_info "Building qubic-cli..."
     mkdir -p build && cd build
     cmake .. > /dev/null && make > /dev/null
     cp qubic-cli "${INSTALL_DIR}/qubic_docker/"
     cp qubic-cli "${INSTALL_DIR}/scripts/"
     popd > /dev/null
-    log_success "Built 'qubic-cli' and copied to relevant directories."
+    log_success "Built 'qubic-cli'."
 
     pushd "${INSTALL_DIR}/qlogging" > /dev/null
+    log_info "Building qlogging..."
     mkdir -p build && cd build
     cmake .. > /dev/null && make > /dev/null
     cp qlogging "${INSTALL_DIR}/qubic_docker/"
     cp qlogging "${INSTALL_DIR}/scripts/"
     popd > /dev/null
-    log_success "Built 'qlogging' and copied to relevant directories."
+    log_success "Built 'qlogging'."
     add_to_summary "Compiled and deployed 'qubic-cli' and 'qlogging' tools."
 }
 
 function print_summary() {
     echo -e "\n\n${GREEN}===================================================${NC}"
-    echo -e "${GREEN}${ICON_SUCCESS}      Qubic Dev Kit Installation Complete      ${NC}"
+    echo -e "${GREEN}${ICON_ROCKET}               Installation to the Moon!              ${ICON_ROCKET}${NC}"
     echo -e "${GREEN}===================================================${NC}\n"
     echo -e "${BLUE}${ICON_INFO} Summary of actions performed:${NC}"
     for item in "${SUMMARY_LOG[@]}"; do
@@ -229,7 +275,7 @@ function print_summary() {
     done
     echo -e "\n${ICON_SOLANA} The Qubic environment is installed in: ${SOLANA_YELLOW}${INSTALL_DIR}${NC}"
     echo -e "${ICON_INFO} You can now proceed with running the Qubic services."
-    echo -e "\n${GREEN}===================================================${NC}\n"
+    echo -e "\n${GREEN}${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET} ${ICON_ROCKET}${NC}\n"
 }
 
 # --- Main Execution ---
