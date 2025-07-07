@@ -1,13 +1,12 @@
 #!/bin/bash
 
 # ==============================================================================
-# Qubic Development Kit Installer - Best-Practice Version (v7)
+# Qubic Development Kit Installer - Best-Practice Version (v8)
 #
 # This script installs the Qubic development environment.
 # Changelog:
+# - v8: Made script idempotent by ensuring submodules are initialized on re-runs.
 # - v7: Added live progress bar for downloads and enhanced diagnostic checks.
-#       Added wget to dependency list.
-# - v6: Fixed 'read' syntax error, added Solana Yellow, confirmed Bitcoin Orange.
 # ==============================================================================
 
 # --- Script Configuration ---
@@ -99,13 +98,18 @@ function install_dependencies() {
 
 function clone_repo() {
     if [ -d "${INSTALL_DIR}/.git" ]; then
-        log_warn "Qubic repository already exists. Skipping clone."
+        log_warn "Qubic repository already exists."
+        log_info "Verifying and initializing submodules to ensure they are present..."
+        # This command is idempotent. It will initialize missing submodules and
+        # ensure existing ones are on the correct commit.
+        git submodule update --init --recursive
+        log_success "Submodules are up to date."
     else
-        log_info "Cloning Qubic development kit from GitHub..."
+        log_info "Cloning Qubic development kit and all submodules..."
         git clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
         log_success "Qubic repository cloned successfully."
     fi
-    add_to_summary "Cloned Qubic development kit repository."
+    add_to_summary "Ensured Qubic repository and all submodules are present."
 }
 
 function setup_virtualbox() {
