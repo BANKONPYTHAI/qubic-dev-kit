@@ -50,6 +50,10 @@ EventTx #1FromId Told1 2 21183461.153 QU transfer: from WTUBWAEQJHTFIEDXCJHVRXAX
 Tick 21183462 doesn't generate any log
  21183473.153 Burn: MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWLWD burned 100000 QU
 ```
+docker view qubic
+```bash
+sudo docker ps --filter "name=qubic"
+```
 
 💰 Testnet Resources
 Getting Testnet Funds (Faucet)
