@@ -3,12 +3,13 @@
 # ==============================================================================
 # Qubic Development Kit Installer - Best-Practice Version (v23)
 #
-# This script installs the Qubic development environment.
+# This script installs the Qubic development environment outside of the root folder.
+# maintaining root==root system admin principal
 # Changelog:
 # - v23: Added a timed, interactive prompt to allow users to choose between
-#        the official qubic-cli and the BANKONPYTHAI fork.
+#        the official qubic-cli and the BANKON PYTHAI qubic-cli Ubuntu fix fork.
 # - v22: Corrected a critical syntax error (unexpected EOF).
-# - v21: Build process output is now streamed directly to the console.
+# - v21: Build process output is now streamed directly to the console from make.
 # ==============================================================================
 
 # --- Script Configuration ---
