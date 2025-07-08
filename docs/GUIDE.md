@@ -6,12 +6,15 @@ This project provides a fully automated script (`testnet_setup.sh`) that builds 
 
 ---
 
-## 💰 Getting Started: The One-Command Setup
+## 💰 Getting Started: environment_setup.sh [backend] frontend_setup.sh [testnet]
 
-vision: The entire environment, from system dependencies to a running testnet node, is handled by a single script<br /><br />
+<br /><br />
 current:<br /><br />
 To begin, run the setup script from your terminal:
 
+```bash
+chmod +x environment_setup.sh
+```
 ```bash
 sudo ./environment_setup.sh
 ```
@@ -24,7 +27,15 @@ This script will:<br /><br />
 ✅ Clone the necessary Qubic source code repositories<br /><br />
 ✅ Compile the qubic-cli and qlogging tools<br /><br />
 ✅ Download and prepare the testnet virtual hard disk (VHD)<br /><br />
-# almost ..... ✅ Automatically configure and launch your testnet node in VirtualBox<br /><br />
+
+
+```bash
+chmod +x setup_testnet.sh
+```
+```bash
+sudo ./setup_testnet.sh
+```
+✅ Automatically configure and launch your testnet node in Docker with nginx for localhost<br /><br />
 # 🖥️ Using Your Deployed Testnet Environment
 Once the script finishes, your testnet node is already running in the background. Here’s how to interact with it<br /><br />
 # Monitoring Your Node with qlogging
@@ -39,16 +50,7 @@ EventTx #1FromId Told1 2 21183461.153 QU transfer: from WTUBWAEQJHTFIEDXCJHVRXAX
 Tick 21183462 doesn't generate any log
  21183473.153 Burn: MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWLWD burned 100000 QU
 ```
-# Managing the Virtual Machine
-Your node runs inside a VirtualBox VM named "Qubic Testnet Node". You can manage it from the command line:
-To Stop the Node (Graceful Shutdown):
-```bash
-VBoxManage controlvm "Qubic Testnet Node" acpipowerbutton
-To Force a Shutdown (Power Off):
-VBoxManage controlvm "Qubic Testnet Node" poweroff
-To Start the Node Again Later:
-VBoxManage startvm "Qubic Testnet Node" --type headless
-```
+
 💰 Testnet Resources
 Getting Testnet Funds (Faucet)
 You need test funds to deploy and interact with smart contracts.
@@ -59,7 +61,6 @@ Pre-Funded Testnet Seeds
 For quick testing, the following seeds are available on the testnet, each containing approximately 1 billion testnet Qubic tokens.
 <details>
 <summary>🔑 **Click to view 27 available pre-funded seeds**</summary>
-Generated code
 fwqatwliqyszxivzgtyyfllymopjimkyoreolgyflsnfpcytkhagqii
 xpsxzzfqvaohzzwlbofvqkqeemzhnrscpeeokoumekfodtgzmwghtqm
 ukzbkszgzpipmxrrqcxcppumxoxzerrvbjgthinzodrlyblkedutmsy
