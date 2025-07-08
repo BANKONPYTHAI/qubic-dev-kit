@@ -100,7 +100,7 @@ function clone_repo() {
         log_warn "Qubic repository already exists. Synchronizing submodules..."
         git submodule update --init --recursive
     else
-        log_info "Cloning Qubic development kit and its submodules..."
+        log_info "Cloning qubic-dev-kit  and its submodules..."
         git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
     fi
     log_success "Qubic repository is up to date."
@@ -110,8 +110,8 @@ function clone_repo() {
     local cli_repo_name="BANKONPYTHAI (Ubuntu Fix)"
 
     log_info "You have a choice for the qubic-cli component."
-    echo -e "${ORANGE}${ICON_WARN} Use the BANKONPYTHAI fork with Ubuntu fixes? (Recommended)"
-    echo -e "${ORANGE}    (Answering 'n' will use the original Qubic repo instead)"
+    echo -e "${ORANGE}${ICON_WARN} Use the BANKONP YTHAI fork with Ubuntu fixes? (Recommended)"
+    echo -e "${ORANGE}    (Answering 'n' will use the offical https://github.com/qubic repo instead)"
     echo -n -e "${ORANGE}    (Auto-selects fork in 5s) [Y/n]: ${NC}"
     read -t 5 response || true
     echo
