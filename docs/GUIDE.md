@@ -1,4 +1,4 @@
-# ▀█ Qubic Development Kit & Testnet Guide
+# Qubic Development Kit & Testnet Guide
 
 Welcome to the Qubic Dev Kit, your all-in-one solution for creating and testing smart contracts on the Qubic network. This guide is designed for developers, especially those participating in events like **Hackathon Madrid 2025**.
 
