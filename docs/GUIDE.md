@@ -30,12 +30,13 @@ The most important tool for debugging is qlogging, which shows a real-time feed 
 To start monitoring, run the following command from your host machine's terminal:
 ```bash
 /opt/qubic/bin/qlogging
+```
 You will see output similar to this, which is invaluable for seeing how your smart contracts are behaving:
 ```txt
 EventTx #1FromId Told1 2 21183461.153 QU transfer: from WTUBWAEQJHTFIEDXCJHVRXAXYBFCHAPQUPOQMGTJVGXYEBVRYTOVFHLFBCMB to MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWWD 10000QU.
 Tick 21183462 doesn't generate any log
  21183473.153 Burn: MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWLWD burned 100000 QU
-
+```
 # Managing the Virtual Machine
 Your node runs inside a VirtualBox VM named "Qubic Testnet Node". You can manage it from the command line:
 To Stop the Node (Graceful Shutdown):
