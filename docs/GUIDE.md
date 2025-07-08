@@ -17,7 +17,7 @@ To begin, run the setup script from your terminal:
 ```bash
 sudo ./testnet_setup.sh
 ```
-This script will:
+This script will:<br /><br />
 ✅ Install all required software (VirtualBox, Docker, build tools)<br /><br />
 ✅ Clone the necessary Qubic source code repositories<br /><br />
 ✅ Compile the qubic-cli and qlogging tools<br /><br />
