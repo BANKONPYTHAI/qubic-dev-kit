@@ -6,7 +6,7 @@ This project provides a fully automated script (`testnet_setup.sh`) that builds 
 
 ---
 
-## 🚀 Getting Started: The One-Command Setup
+## 💰 Getting Started: The One-Command Setup
 
 vsion: The entire environment, from system dependencies to a running testnet node, is handled by a single script.
 current:<br />,br />
