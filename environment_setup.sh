@@ -51,10 +51,10 @@ log_milestone() { echo -e "${ORANGE}${ICON_QUBIC} $1${NC}"; }
 # --- Helper Functions ---
 check_root() {
     if [ "$(id -u)" -ne 0 ]; then
-        log_error "This script must be run as root. Please use sudo."
+        log_error "This script requires root priviledge. use sudo"
         exit 1
     fi
-    log_success "Root privileges confirmed."
+    log_success "Root privileges confirmed"
 }
 
 # --- Main Logic Functions ---
@@ -69,7 +69,7 @@ function setup_environment() {
 }
 
 function cleanup_on_error() {
-    log_error "An error occurred. Installation failed."
+    log_error "An error occurred. Installation failed"
     log_warn "Check above for details."
     exit 1
 }
@@ -93,7 +93,7 @@ function install_dependencies() {
         dkms build-essential linux-headers-$(uname -r) gcc make perl curl tree unzip wget
     )
     apt-get install -y "${DEPS[@]}" >/dev/null
-    log_success "System dependencies installed."
+    log_success "System dependencies installed"
 }
 
 function clone_repo() {
@@ -104,7 +104,7 @@ function clone_repo() {
         log_info "Cloning qubic-dev-kit  and its submodules..."
         git -c 'http.https://github.com/.extraheader=' -c 'http.proxy=' clone --recursive "${QUBIC_REPO_URL}" "${INSTALL_DIR}"
     fi
-    log_success "Qubic repository is up to date."
+    log_success "Qubic repository is up to date"
 
     # --- Interactive Choice for qubic-cli Repository ---
     local cli_repo_url="${QUBIC_CLI_FORK_URL}" # Default to the fork
@@ -151,14 +151,14 @@ function setup_virtualbox() {
 
         wget -4 -O "/tmp/${vbox_deb}" "${download_url}/${vbox_deb}"
         wget -4 -O "/tmp/${extpack}" "${download_url}/${extpack}"
-        log_success "VirtualBox packages downloaded."
+        log_success "VirtualBox packages downloaded correctly"
 
         log_info "Installing VirtualBox..."
         dpkg -i "/tmp/${vbox_deb}" >/dev/null || apt-get -y --fix-broken install >/dev/null
         VBoxManage extpack install --replace "/tmp/${extpack}" --accept-license="${VBOX_EXTPACK_LICENSE}" >/dev/null
         /sbin/vboxconfig >/dev/null
         rm -f "/tmp/${vbox_deb}" "/tmp/${extpack}"
-        log_success "VirtualBox ${VBOX_VERSION} installed and configured."
+        log_success "VirtualBox ${VBOX_VERSION} installed and configured"
     fi
 }
 
@@ -172,9 +172,9 @@ function install_docker_compose() {
 
         if [[ "$response" =~ ^[Nn]$ ]]; then
             perform_install=false
-            log_success "Skipping Docker Compose re-installation."
+            log_success "Skipping Docker Compose re-installation"
         else
-            log_info "Proceeding with Docker Compose re-installation."
+            log_info "Proceeding with Docker Compose re-installation"
         fi
     fi
 
@@ -182,7 +182,7 @@ function install_docker_compose() {
         log_milestone "Installing/Updating Docker Compose (forcing IPv4)..."
         curl -4 -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         chmod +x /usr/local/bin/docker-compose
-        log_success "Docker Compose installed/updated."
+        log_success "Docker Compose installed/updated"
     fi
 }
 
@@ -192,7 +192,7 @@ function prepare_qubic_files() {
         if [ -d "core-docker" ]; then
             mv core-docker qubic_docker
         else
-            log_error "core-docker submodule not found! Cannot proceed."
+            log_error "core-docker submodule not found! Cannot proceed!"
             exit 1
         fi
     else
@@ -251,12 +251,12 @@ function build_tools() {
     mkdir -p build && cd build
     
     if ! cmake ..; then
-        log_error "cmake for qubic-cli failed. Please review the output above."
+        log_error "cmake for qubic-cli failed. Review output above."
         exit 1
     fi
 
     if ! make; then
-        log_error "make for qubic-cli failed. Please review the output above."
+        log_error "make for qubic-cli failed. Review output above."
         exit 1
     fi
     
@@ -269,12 +269,12 @@ function build_tools() {
     mkdir -p build && cd build
 
     if ! cmake ..; then
-        log_error "cmake for qlogging failed. Please review the output above."
+        log_error "cmake for qlogging failed. Review output above."
         exit 1
     fi
 
     if ! make; then
-        log_error "make for qlogging failed. Please review the output above."
+        log_error "make for qlogging failed. Review output above."
         exit 1
     fi
 
