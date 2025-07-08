@@ -8,21 +8,23 @@ This project provides a fully automated script (`testnet_setup.sh`) that builds 
 
 ## 🚀 Getting Started: The One-Command Setup
 
-The entire environment, from system dependencies to a running testnet node, is handled by a single script.
-
-> **Note:** If you have already run the script successfully, you can skip to the next section.
-
+vsion: The entire environment, from system dependencies to a running testnet node, is handled by a single script.
+current:<br />,br />
 To begin, run the setup script from your terminal:
 
 ```bash
-sudo ./testnet_setup.sh
+sudo ./environment_setup.sh
 ```
+
+> **Note:** If you have already run the script successfully, you can skip to the next section.
+
+
 This script will:<br /><br />
 ✅ Install all required software (VirtualBox, Docker, build tools)<br /><br />
 ✅ Clone the necessary Qubic source code repositories<br /><br />
 ✅ Compile the qubic-cli and qlogging tools<br /><br />
 ✅ Download and prepare the testnet virtual hard disk (VHD)<br /><br />
-✅ Automatically configure and launch your testnet node in VirtualBox<br /><br />
+# almost ..... ✅ Automatically configure and launch your testnet node in VirtualBox<br /><br />
 # 🖥️ Using Your Deployed Testnet Environment
 Once the script finishes, your testnet node is already running in the background. Here’s how to interact with it<br /><br />
 # Monitoring Your Node with qlogging
