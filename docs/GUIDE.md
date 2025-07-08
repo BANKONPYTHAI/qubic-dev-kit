@@ -18,14 +18,14 @@ To begin, run the setup script from your terminal:
 sudo ./testnet_setup.sh
 ```
 This script will:
-✅ Install all required software (VirtualBox, Docker, build tools).
-✅ Clone the necessary Qubic source code repositories.
-✅ Compile the qubic-cli and qlogging tools.
-✅ Download and prepare the testnet virtual hard disk (VHD).
-✅ Automatically configure and launch your testnet node in VirtualBox.
-🖥️ Using Your Deployed Testnet Environment
-Once the script finishes, your testnet node is already running in the background. Here’s how to interact with it.
-Monitoring Your Node with qlogging
+✅ Install all required software (VirtualBox, Docker, build tools)<br /><br />
+✅ Clone the necessary Qubic source code repositories<br /><br />
+✅ Compile the qubic-cli and qlogging tools<br /><br />
+✅ Download and prepare the testnet virtual hard disk (VHD)<br /><br />
+✅ Automatically configure and launch your testnet node in VirtualBox<br /><br />
+# 🖥️ Using Your Deployed Testnet Environment
+Once the script finishes, your testnet node is already running in the background. Here’s how to interact with it<br /><br />
+# Monitoring Your Node with qlogging
 The most important tool for debugging is qlogging, which shows a real-time feed of transactions and events on your node.
 To start monitoring, run the following command from your host machine's terminal:
 ```bash
