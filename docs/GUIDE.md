@@ -133,13 +133,13 @@ curl -X 'POST' \
   "requestData": ""
 }'
 ```
-This should return a response like: {"responseData":"AMqaO0BCDwBAS0wA"}
-💡 Best Practices
-Use the CLI for Initial Testing: It's the most direct way to interact with your contracts.
-Monitor Logs: Always have a terminal open running qlogging to see what's happening.
-Test with Small Amounts: Even with testnet funds, it's good practice.
-Document Your Contract Index: Keep track of your contract's index for future reference.
-💬 Support & Resources
-Qubic Main Org: https://github.com/qubic
-Documentation: https://github.com/qubic/docs
-Get Help: For questions or if you need server resources, join the Qubic Discord and ask in the #dev channel.
+This should return a response like: {"responseData":"AMqaO0BCDwBAS0wA"}<br /><br />
+💡 Best Practices<br /><br />
+Use the CLI for Initial Testing: It's the most direct way to interact with your contracts<br /><br />
+Monitor Logs: Always have a terminal open running qlogging to see what's happening<br /><br />
+Test with Small Amounts: Even with testnet funds, it's good practice<br /><br />
+Document Your Contract Index: Keep track of your contract's index for future reference<br /><br />
+# 💬 Support & Resources
+Qubic Main Org: https://github.com/qubic<br /><br />
+Documentation: https://github.com/qubic/docs<br /><br />
+Get Help: For questions or if you need server resources, join the Qubic Discord and ask in the #dev channel<br /><br />
