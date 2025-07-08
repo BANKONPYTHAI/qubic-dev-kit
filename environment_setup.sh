@@ -69,7 +69,7 @@ function setup_environment() {
 
 function cleanup_on_error() {
     log_error "An error occurred. Installation failed."
-    log_warn "Please check the output above for details."
+    log_warn "Check above for details."
     exit 1
 }
 
