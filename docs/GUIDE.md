@@ -97,6 +97,10 @@ You can use the compiled `qubic-cli` tool with a pre-funded seed to interact wit
 ```bash
 /opt/qubic/bin/qubic-cli -nodeip 127.0.0.1 -nodeport 21841 -seed fwqatwliqyszxivzgtyyfllymopjimkyoreolgyflsnfpcytkhagqii -somecommand
 ```
+**check balance of pre-funded seed**
+```bash
+/opt/qubic/bin/qubic-cli -seed fwqatwliqyszxivzgtyyfllymopjimkyoreolgyflsnfpcytkhagqii -getbalance```
+```
 🔬 Advanced: Querying a Smart Contract
 Here is a quick guide on how to read data from a smart contract using the RPC API.
 Step 1: Identify the Smart Contract Function
