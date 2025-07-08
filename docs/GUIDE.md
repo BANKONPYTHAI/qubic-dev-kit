@@ -8,8 +8,8 @@ This project provides a fully automated script (`testnet_setup.sh`) that builds 
 
 ## 💰 Getting Started: The One-Command Setup
 
-vsion: The entire environment, from system dependencies to a running testnet node, is handled by a single script.
-current:<br />,br />
+vision: The entire environment, from system dependencies to a running testnet node, is handled by a single script<br /><br />
+current:<br /><br />
 To begin, run the setup script from your terminal:
 
 ```bash
